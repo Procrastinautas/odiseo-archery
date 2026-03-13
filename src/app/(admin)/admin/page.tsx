@@ -1,16 +1,18 @@
-import { createClient } from '@/lib/supabase/server'
-import { redirect } from 'next/navigation'
-import { PageHeader } from '@/components/layout/PageHeader'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Badge } from '@/components/ui/badge'
-import { buttonVariants } from '@/components/ui/button-variants'
-import Link from 'next/link'
-import { Calendar, Users, CreditCard, ChevronRight } from 'lucide-react'
+import { createClient } from "@/lib/supabase/server";
+import { redirect } from "next/navigation";
+import { PageHeader } from "@/components/layout/PageHeader";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { buttonVariants } from "@/components/ui/button-variants";
+import Link from "next/link";
+import { Calendar, Users, CreditCard, ChevronRight } from "lucide-react";
 
 export default async function AdminDashboard() {
-  const supabase = await createClient()
-  const { data: { user } } = await supabase.auth.getUser()
-  if (!user) redirect('/login')
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
 
   const [
     { count: pendingSessions },
@@ -19,47 +21,49 @@ export default async function AdminDashboard() {
     { data: recentSessions },
   ] = await Promise.all([
     supabase
-      .from('scheduled_sessions')
-      .select('id', { count: 'exact', head: true })
-      .eq('status', 'pending'),
+      .from("scheduled_sessions")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "pending"),
     supabase
-      .from('payments')
-      .select('id', { count: 'exact', head: true })
-      .eq('status', 'pending'),
+      .from("payments")
+      .select("id", { count: "exact", head: true })
+      .eq("status", "pending"),
     supabase
-      .from('profiles')
-      .select('id', { count: 'exact', head: true })
-      .eq('role', 'user'),
+      .from("profiles")
+      .select("id", { count: "exact", head: true })
+      .eq("role", "user"),
     supabase
-      .from('scheduled_sessions')
-      .select('id, date, status, profiles:user_id(name), locations:location_id(name)')
-      .order('created_at', { ascending: false })
+      .from("scheduled_sessions")
+      .select(
+        "id, date, status, profiles:user_id(name), locations:location_id(name)",
+      )
+      .order("created_at", { ascending: false })
       .limit(5),
-  ])
+  ]);
 
   const metrics = [
     {
-      label: 'Sesiones pendientes',
+      label: "Sesiones pendientes",
       value: pendingSessions ?? 0,
       icon: Calendar,
-      href: '/admin/sessions?status=pending',
+      href: "/admin/sessions?status=pending",
       alert: (pendingSessions ?? 0) > 0,
     },
     {
-      label: 'Pagos sin confirmar',
+      label: "Pagos sin confirmar",
       value: pendingPayments ?? 0,
       icon: CreditCard,
-      href: '/admin/sessions',
+      href: "/admin/sessions",
       alert: (pendingPayments ?? 0) > 0,
     },
     {
-      label: 'Usuarios registrados',
+      label: "Usuarios registrados",
       value: totalUsers ?? 0,
       icon: Users,
-      href: '/admin/users',
+      href: "/admin/users",
       alert: false,
     },
-  ]
+  ];
 
   return (
     <div className="flex flex-col">
@@ -81,7 +85,9 @@ export default async function AdminDashboard() {
                   <div className="flex items-end gap-2">
                     <span className="text-3xl font-bold">{value}</span>
                     {alert && value > 0 && (
-                      <Badge variant="destructive" className="mb-0.5">Acción requerida</Badge>
+                      <Badge variant="destructive" className="mb-0.5">
+                        Acción requerida
+                      </Badge>
                     )}
                   </div>
                 </CardContent>
@@ -94,7 +100,10 @@ export default async function AdminDashboard() {
         <Card>
           <CardHeader className="pb-3 flex-row items-center justify-between">
             <CardTitle className="text-base">Actividad reciente</CardTitle>
-            <Link href="/admin/sessions" className={buttonVariants({ variant: 'ghost', size: 'sm' })}>
+            <Link
+              href="/admin/sessions"
+              className={buttonVariants({ variant: "ghost", size: "sm" })}
+            >
               Ver todas
               <ChevronRight className="ml-1 h-4 w-4" />
             </Link>
@@ -106,28 +115,37 @@ export default async function AdminDashboard() {
                   <div className="flex items-center justify-between rounded-md px-2 py-2 hover:bg-accent/30 transition-colors">
                     <div>
                       <p className="text-sm font-medium">
-                        {(session.profiles as unknown as { name: string } | null)?.name ?? '—'}
+                        {(
+                          session.profiles as unknown as { name: string } | null
+                        )?.name ?? "—"}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {session.date} · {(session.locations as unknown as { name: string } | null)?.name}
+                        {session.date} ·{" "}
+                        {
+                          (
+                            session.locations as unknown as {
+                              name: string;
+                            } | null
+                          )?.name
+                        }
                       </p>
                     </div>
                     <Badge
                       variant={
-                        session.status === 'confirmed'
-                          ? 'default'
-                          : session.status === 'declined'
-                          ? 'destructive'
-                          : 'secondary'
+                        session.status === "confirmed"
+                          ? "default"
+                          : session.status === "declined"
+                            ? "destructive"
+                            : "secondary"
                       }
                     >
-                      {session.status === 'pending'
-                        ? 'Pendiente'
-                        : session.status === 'confirmed'
-                        ? 'Confirmada'
-                        : session.status === 'declined'
-                        ? 'Rechazada'
-                        : 'Cancelada'}
+                      {session.status === "pending"
+                        ? "Pendiente"
+                        : session.status === "confirmed"
+                          ? "Confirmada"
+                          : session.status === "declined"
+                            ? "Rechazada"
+                            : "Cancelada"}
                     </Badge>
                   </div>
                 </Link>
@@ -141,5 +159,5 @@ export default async function AdminDashboard() {
         </Card>
       </div>
     </div>
-  )
+  );
 }

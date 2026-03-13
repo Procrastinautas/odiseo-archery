@@ -1,31 +1,36 @@
-'use client'
+"use client";
 
-import { useState, useTransition } from 'react'
-import { useRouter } from 'next/navigation'
-import { upsertRoundScore } from '@/actions/training'
-import { ScoreInput } from '@/components/training/ScoreInput'
-import type { ScoreResult } from '@/components/training/ScoreInput'
-import { Button } from '@/components/ui/button'
-import type { Database, Json } from '@/types/database'
+import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { upsertRoundScore } from "@/actions/training";
+import { ScoreInput } from "@/components/training/ScoreInput";
+import type { ScoreResult } from "@/components/training/ScoreInput";
+import { Button } from "@/components/ui/button";
+import type { Database, Json } from "@/types/database";
 
-type RoundScore = Database['public']['Tables']['round_scores']['Row']
+type RoundScore = Database["public"]["Tables"]["round_scores"]["Row"];
 
 interface Props {
-  roundId: string
-  roundNumber: number
-  trainingSessionId: string
-  existingScore: RoundScore | null
+  roundId: string;
+  roundNumber: number;
+  trainingSessionId: string;
+  existingScore: RoundScore | null;
 }
 
-export function RoundForm({ roundId, roundNumber, trainingSessionId, existingScore }: Props) {
-  const router = useRouter()
-  const [isPending, startTransition] = useTransition()
-  const [result, setResult] = useState<ScoreResult | null>(null)
-  const [error, setError] = useState<string | null>(null)
+export function RoundForm({
+  roundId,
+  roundNumber,
+  trainingSessionId,
+  existingScore,
+}: Props) {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+  const [result, setResult] = useState<ScoreResult | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   function handleSubmit() {
-    if (!result) return
-    setError(null)
+    if (!result) return;
+    setError(null);
     startTransition(async () => {
       const res = await upsertRoundScore(roundId, {
         method: result.method,
@@ -36,20 +41,20 @@ export function RoundForm({ roundId, roundNumber, trainingSessionId, existingSco
         nines: result.nines,
         below_8_count: result.below_8_count,
         misses: result.misses,
-      })
+      });
       if (res.error) {
-        setError(res.error)
-        return
+        setError(res.error);
+        return;
       }
-      router.push(`/training/${trainingSessionId}`)
-    })
+      router.push(`/training/${trainingSessionId}`);
+    });
   }
 
   const initialMethod = existingScore
-    ? (existingScore.method as 'manual' | 'summary')
-    : 'manual'
+    ? (existingScore.method as "manual" | "summary")
+    : "manual";
 
-  const initialData = existingScore ? existingScore.data : null
+  const initialData = existingScore ? existingScore.data : null;
 
   return (
     <div className="flex flex-col gap-4 p-4">
@@ -59,7 +64,9 @@ export function RoundForm({ roundId, roundNumber, trainingSessionId, existingSco
 
       <ScoreInput
         initialMethod={initialMethod}
-        initialData={initialData as Parameters<typeof ScoreInput>[0]['initialData']}
+        initialData={
+          initialData as Parameters<typeof ScoreInput>[0]["initialData"]
+        }
         onChange={setResult}
       />
 
@@ -81,9 +88,9 @@ export function RoundForm({ roundId, roundNumber, trainingSessionId, existingSco
           onClick={handleSubmit}
           disabled={isPending || !result}
         >
-          {isPending ? 'Guardando...' : 'Guardar ronda'}
+          {isPending ? "Guardando..." : "Guardar ronda"}
         </Button>
       </div>
     </div>
-  )
+  );
 }
