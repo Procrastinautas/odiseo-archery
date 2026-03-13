@@ -17,7 +17,7 @@ import { Eye, EyeOff, Loader2 } from "lucide-react";
 
 type Mode = "login" | "signup";
 
-export default function LoginPage() {
+function LoginForm() {
   const searchParams = useSearchParams();
   const urlError = searchParams.get("error");
 
@@ -202,5 +202,13 @@ export default function LoginPage() {
         </p>
       </CardContent>
     </Card>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense>
+      <LoginForm />
+    </Suspense>
   );
 }
