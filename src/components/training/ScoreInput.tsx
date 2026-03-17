@@ -76,7 +76,8 @@ function slotColorClass(val: ArrowValue | null): string {
   if (val === "X" || val === 10) return "text-yellow-500 font-bold";
   if (val === 9 || val === 8) return "text-rose-500 font-semibold";
   if (val === 7 || val === 6) return "text-blue-500 font-semibold";
-  if (val === 5 || val === 4) return "text-zinc-600 dark:text-zinc-300 font-medium";
+  if (val === 5 || val === 4)
+    return "text-zinc-600 dark:text-zinc-300 font-medium";
   if (val === "M") return "text-muted-foreground italic";
   return "text-zinc-400 dark:text-zinc-500 font-medium"; // 1, 2, 3
 }
@@ -119,14 +120,22 @@ function ManualInput({
   useEffect(() => {
     const valid = init.filter((v): v is ArrowValue => v !== null);
     if (valid.length > 0) {
-      onChange({ method: "manual", data: { arrows: valid }, ...computeManual(valid) });
+      onChange({
+        method: "manual",
+        data: { arrows: valid },
+        ...computeManual(valid),
+      });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function fireOnChange(next: (ArrowValue | null)[]) {
     const valid = next.filter((v): v is ArrowValue => v !== null);
-    onChange({ method: "manual", data: { arrows: valid }, ...computeManual(valid) });
+    onChange({
+      method: "manual",
+      data: { arrows: valid },
+      ...computeManual(valid),
+    });
   }
 
   function handleKeyPress(val: ArrowValue) {
