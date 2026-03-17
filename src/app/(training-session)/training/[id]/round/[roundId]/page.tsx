@@ -28,7 +28,9 @@ export default async function RoundPage({
   const session = round.training_sessions as { user_id: string };
   if (session.user_id !== user.id) notFound();
 
-  const roundScores = Array.isArray(round.round_scores) ? round.round_scores : [];
+  const roundScores = Array.isArray(round.round_scores)
+    ? round.round_scores
+    : [];
   const existingScore = roundScores[0] ?? null;
 
   return (
