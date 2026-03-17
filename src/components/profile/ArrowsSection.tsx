@@ -1,55 +1,55 @@
-'use client'
+"use client";
 
-import { useState } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { Button } from '@/components/ui/button'
-import { Separator } from '@/components/ui/separator'
-import { ArrowSheet } from './ArrowSheet'
-import { deleteArrow } from '@/actions/profile'
-import { toast } from 'sonner'
-import { Pencil, Trash2, Plus } from 'lucide-react'
-import type { Database } from '@/types/database'
+import { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button, AddButton, DeleteButton } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
+import { ArrowSheet } from "./ArrowSheet";
+import { deleteArrow } from "@/actions/profile";
+import { toast } from "sonner";
+import { Pencil } from "lucide-react";
+import type { Database } from "@/types/database";
 
-type Arrow = Database['public']['Tables']['arrows']['Row']
+type Arrow = Database["public"]["Tables"]["arrows"]["Row"];
 
 interface ArrowsSectionProps {
-  initialArrows: Arrow[]
+  initialArrows: Arrow[];
 }
 
 export function ArrowsSection({ initialArrows }: ArrowsSectionProps) {
-  const [arrows, setArrows] = useState<Arrow[]>(initialArrows)
-  const [sheetOpen, setSheetOpen] = useState(false)
-  const [editingArrow, setEditingArrow] = useState<Arrow | null>(null)
-  const [deleting, setDeleting] = useState<string | null>(null)
+  const [arrows, setArrows] = useState<Arrow[]>(initialArrows);
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [editingArrow, setEditingArrow] = useState<Arrow | null>(null);
+  const [deleting, setDeleting] = useState<string | null>(null);
 
   function openAdd() {
-    setEditingArrow(null)
-    setSheetOpen(true)
+    setEditingArrow(null);
+    setSheetOpen(true);
   }
 
   function openEdit(arrow: Arrow) {
-    setEditingArrow(arrow)
-    setSheetOpen(true)
+    setEditingArrow(arrow);
+    setSheetOpen(true);
   }
 
   function handleSaved(saved: Arrow) {
     setArrows((prev) => {
-      const exists = prev.find((a) => a.id === saved.id)
-      if (exists) return prev.map((a) => (a.id === saved.id ? saved : a))
-      return [...prev, saved]
-    })
+      const exists = prev.find((a) => a.id === saved.id);
+      if (exists) return prev.map((a) => (a.id === saved.id ? saved : a));
+      return [...prev, saved];
+    });
   }
 
   async function handleDelete(id: string) {
-    setDeleting(id)
+    setDeleting(id);
     try {
-      await deleteArrow(id)
-      setArrows((prev) => prev.filter((a) => a.id !== id))
-      toast.success('Flecha eliminada')
+      await deleteArrow(id);
+      setArrows((prev) => prev.filter((a) => a.id !== id));
+      toast.success("Flecha eliminada");
     } catch {
-      toast.error('Error al eliminar la flecha')
+      toast.error("Error al eliminar la flecha");
     } finally {
-      setDeleting(null)
+      setDeleting(null);
     }
   }
 
@@ -58,14 +58,15 @@ export function ArrowsSection({ initialArrows }: ArrowsSectionProps) {
       <Card>
         <CardHeader className="pb-3 flex-row items-center justify-between">
           <CardTitle className="text-base">Flechas</CardTitle>
-          <Button size="sm" variant="ghost" onClick={openAdd}>
-            <Plus className="h-4 w-4 mr-1" />
+          <AddButton size="sm" onClick={openAdd}>
             Agregar
-          </Button>
+          </AddButton>
         </CardHeader>
         <CardContent className="space-y-3">
           {arrows.length === 0 && (
-            <p className="text-sm text-muted-foreground">Sin flechas registradas</p>
+            <p className="text-sm text-muted-foreground">
+              Sin flechas registradas
+            </p>
           )}
           {arrows.map((arrow, i) => (
             <div key={arrow.id}>
@@ -81,10 +82,12 @@ export function ArrowsSection({ initialArrows }: ArrowsSectionProps) {
                       arrow.point_type,
                     ]
                       .filter(Boolean)
-                      .join(' · ')}
+                      .join(" · ")}
                   </p>
                   {arrow.notes && (
-                    <p className="text-xs text-muted-foreground italic">{arrow.notes}</p>
+                    <p className="text-xs text-muted-foreground italic">
+                      {arrow.notes}
+                    </p>
                   )}
                 </div>
                 <div className="flex gap-1 shrink-0">
@@ -96,16 +99,12 @@ export function ArrowsSection({ initialArrows }: ArrowsSectionProps) {
                   >
                     <Pencil className="h-3.5 w-3.5" />
                   </Button>
-                  <Button
+                  <DeleteButton
                     size="icon-sm"
-                    variant="ghost"
-                    className="text-muted-foreground hover:text-destructive"
                     onClick={() => handleDelete(arrow.id)}
                     disabled={deleting === arrow.id}
                     aria-label="Eliminar flecha"
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
+                  />
                 </div>
               </div>
             </div>
@@ -114,12 +113,12 @@ export function ArrowsSection({ initialArrows }: ArrowsSectionProps) {
       </Card>
 
       <ArrowSheet
-        key={editingArrow?.id ?? 'new'}
+        key={editingArrow?.id ?? "new"}
         open={sheetOpen}
         onOpenChange={setSheetOpen}
         arrow={editingArrow}
         onSaved={handleSaved}
       />
     </>
-  )
+  );
 }

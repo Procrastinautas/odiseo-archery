@@ -4,8 +4,8 @@ import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 import { createRound, finalizeTrainingSession } from "@/actions/training";
 import { getSessionRecap } from "@/actions/ai";
-import { Button } from "@/components/ui/button";
-import { Plus, FlagOff } from "lucide-react";
+import { Button, AddButton } from "@/components/ui/button";
+import { FlagOff } from "lucide-react";
 
 interface Props {
   trainingSessionId: string;
@@ -34,16 +34,14 @@ export function SessionActions({ trainingSessionId }: Props) {
 
   return (
     <div className="flex flex-col gap-2">
-      <Button
+      <AddButton
         type="button"
-        variant="outline"
         onClick={handleAddRound}
         disabled={isPending}
         className="w-full"
       >
-        <Plus className="h-4 w-4 mr-2" />
         Agregar ronda
-      </Button>
+      </AddButton>
       <Button
         type="button"
         onClick={handleFinalize}

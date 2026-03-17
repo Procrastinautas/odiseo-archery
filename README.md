@@ -34,3 +34,26 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## Development (custom port & hostname)
+
+This project is configured to run the dev server on port `3030` and can be bound to a local hostname for easier testing.
+
+- Start the dev server (uses `package.json` script):
+
+```bash
+pnpm dev
+# or
+npm run dev
+```
+
+- If you want to use the custom hostname `odiseo-archery.local`, add this hosts entry on macOS (requires sudo):
+
+```bash
+echo "127.0.0.1 odiseo-archery.local" | sudo tee -a /etc/hosts
+sudo dscacheutil -flushcache && sudo killall -HUP mDNSResponder
+```
+
+- Then open: http://odiseo-archery.local:3030
+
+- If you prefer not to bind to a hostname, you can edit the `dev` script in `package.json` to remove the `--hostname` flag and use `http://localhost:3030` instead.

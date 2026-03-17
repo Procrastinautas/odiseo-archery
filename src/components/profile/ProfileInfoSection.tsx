@@ -62,6 +62,7 @@ export function ProfileInfoSection({
       return;
     }
 
+    // Show a local blob preview immediately — no network round-trip needed
     const objectUrl = URL.createObjectURL(file);
     setPreview(objectUrl);
 
@@ -80,14 +81,29 @@ export function ProfileInfoSection({
           data: { publicUrl },
         } = supabase.storage.from("avatars").getPublicUrl(path);
 
-        // Bust the CDN cache so the new image is fetched immediately
-        const urlWithBuster = `${publicUrl}?t=${Date.now()}`;
-        await updateProfile({ picture_url: urlWithBuster });
-        // Switch preview from the local blob URL to the real storage URL
-        URL.revokeObjectURL(preview ?? "");
-        setPreview(urlWithBuster);
+        // Append a cache-buster so the CDN serves the new file on future page
+        // loads (other pages that render ArcherCard read from the DB).
+        const storedUrl = `${publicUrl}?t=${Date.now()}`;
+
+        // Verify the URL is actually reachable before saving to DB
+        const testResponse = await fetch(storedUrl, { method: "HEAD" });
+        console.log(
+          "[avatar upload] public URL:",
+          storedUrl,
+          "→ HTTP",
+          testResponse.status,
+        );
+        if (!testResponse.ok) {
+          throw new Error(
+            `La URL pública devolvió HTTP ${testResponse.status}. ¿El bucket "avatars" es público en Supabase?`,
+          );
+        }
+
+        await updateProfile({ picture_url: storedUrl });
         toast.success("Foto actualizada");
       } catch (err) {
+        // Revoke the blob URL we created (use local var, not stale closure)
+        URL.revokeObjectURL(objectUrl);
         setPreview(pictureUrl);
         toast.error("Error al subir la foto");
         console.error(err);
@@ -104,12 +120,15 @@ export function ProfileInfoSection({
     }
   }
 
+  console.log("[ProfileInfoSection] avatar preview URL:", preview);
+
   return (
     <Card>
       <CardContent className="flex flex-col items-center gap-4 pt-6">
         {/* Avatar */}
         <div className="relative">
           <Avatar className="h-24 w-24 border-2 border-muted">
+            <img src={preview ?? undefined} alt={displayName} />
             <AvatarImage src={preview ?? undefined} alt={displayName} />
             <AvatarFallback className="bg-slate-600 text-white text-2xl font-bold">
               {initials}

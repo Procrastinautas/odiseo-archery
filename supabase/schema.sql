@@ -287,6 +287,7 @@ CREATE TABLE public.round_scores (
   below_8_count integer,
   misses       integer,
   created_at   timestamptz  NOT NULL DEFAULT now(),
+  CONSTRAINT round_scores_round_id_key UNIQUE (round_id),
   CONSTRAINT round_scores_round_id_fkey
     FOREIGN KEY (round_id) REFERENCES public.rounds(id) ON DELETE CASCADE
 );

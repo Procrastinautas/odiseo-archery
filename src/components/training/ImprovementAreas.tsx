@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Trash2, Plus } from "lucide-react";
 import type { Database } from "@/types/database";
+import { Textarea } from "../ui/textarea";
 
 type ImprovementArea = Database["public"]["Tables"]["improvement_areas"]["Row"];
 
@@ -72,7 +73,7 @@ export function ImprovementAreas({ trainingSessionId, initialAreas }: Props) {
         </div>
       ))}
       <div className="flex gap-2">
-        <Input
+        <Textarea
           value={newComment}
           onChange={(e) => setNewComment(e.target.value)}
           placeholder="Agregar área a mejorar..."

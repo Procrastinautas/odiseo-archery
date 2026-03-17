@@ -50,10 +50,6 @@ export function RoundForm({
     });
   }
 
-  const initialMethod = existingScore
-    ? (existingScore.method as "manual" | "summary")
-    : "manual";
-
   const initialData = existingScore ? existingScore.data : null;
 
   return (
@@ -63,7 +59,6 @@ export function RoundForm({
       </p>
 
       <ScoreInput
-        initialMethod={initialMethod}
         initialData={
           initialData as Parameters<typeof ScoreInput>[0]["initialData"]
         }

@@ -2,6 +2,7 @@
 
 > **Audience:** Coding agents performing implementation.
 > **Language rule:** All code, variable names, and specs are in English. All user-facing text (labels, buttons, messages, placeholders, headings) must be in Spanish.
+> **Agent rules:** See `docs/agents.md` for agent and developer guidance that enforces Spanish for user-facing text.
 > **Skip:** Any requirement marked `[tbd]` in the baseline is out of scope.
 
 ---

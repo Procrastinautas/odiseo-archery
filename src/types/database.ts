@@ -520,7 +520,7 @@ export interface Database {
           {
             foreignKeyName: "round_scores_round_id_fkey";
             columns: ["round_id"];
-            isOneToOne: false;
+            isOneToOne: true;
             referencedRelation: "rounds";
             referencedColumns: ["id"];
           },

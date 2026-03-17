@@ -1,11 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
-import { useDebounce } from "use-debounce";
 import { upsertTrainingSession } from "@/actions/training";
 import { AIAdviceBanner } from "@/components/training/AIAdviceBanner";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -49,7 +49,7 @@ export function TrainingForm({ session, bows, arrows }: Props) {
     "idle",
   );
 
-  const { register, watch, setValue } = useForm<FormValues>({
+  const { register, getValues, setValue } = useForm<FormValues>({
     defaultValues: {
       type: session.type ?? undefined,
       weather: session.weather ?? undefined,
@@ -69,30 +69,26 @@ export function TrainingForm({ session, bows, arrows }: Props) {
     },
   });
 
-  const watchedValues = watch();
-  const [debouncedValues] = useDebounce(watchedValues, 1500);
-
-  useEffect(() => {
-    const distance = parseFloat(debouncedValues.distance);
-    upsertTrainingSession(session.id, {
-      type: debouncedValues.type ?? null,
-      weather: debouncedValues.weather ?? null,
-      distance: isNaN(distance) ? null : distance,
-      bow_id: debouncedValues.bow_id || null,
-      arrow_id: debouncedValues.arrow_id || null,
-      target_size: debouncedValues.target_size || null,
-      physical_status: debouncedValues.physical_status || null,
-      new_gear_notes: debouncedValues.new_gear_notes || null,
-      final_thoughts: debouncedValues.final_thoughts || null,
-      start_time: debouncedValues.start_time || null,
-      end_time: debouncedValues.end_time || null,
-    }).then(() => {
-      setSaveStatus("saved");
-      setTimeout(() => setSaveStatus("idle"), 2000);
-    });
+  async function handleSave() {
+    const values = getValues();
+    const distance = parseFloat(values.distance);
     setSaveStatus("saving");
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [debouncedValues]);
+    await upsertTrainingSession(session.id, {
+      type: values.type ?? null,
+      weather: values.weather ?? null,
+      distance: isNaN(distance) ? null : distance,
+      bow_id: values.bow_id || null,
+      arrow_id: values.arrow_id || null,
+      target_size: values.target_size || null,
+      physical_status: values.physical_status || null,
+      new_gear_notes: values.new_gear_notes || null,
+      final_thoughts: values.final_thoughts || null,
+      start_time: values.start_time || null,
+      end_time: values.end_time || null,
+    });
+    setSaveStatus("saved");
+    setTimeout(() => setSaveStatus("idle"), 2000);
+  }
 
   return (
     <div className="flex flex-col gap-4">
@@ -101,20 +97,28 @@ export function TrainingForm({ session, bows, arrows }: Props) {
         initialAdvice={session.ai_advice}
       />
 
-      {/* Auto-save indicator */}
-      <div className="flex justify-end items-center gap-1.5 text-xs text-muted-foreground min-h-[1.25rem]">
-        {saveStatus === "saving" && (
-          <>
-            <Loader2 className="h-3 w-3 animate-spin" />
-            <span>Guardando…</span>
-          </>
-        )}
-        {saveStatus === "saved" && (
-          <>
-            <CheckCircle2 className="h-3 w-3 text-green-500" />
-            <span className="text-green-600">Guardado</span>
-          </>
-        )}
+      <div className="flex justify-end items-center gap-3">
+        <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+          {saveStatus === "saving" && (
+            <>
+              <Loader2 className="h-3 w-3 animate-spin" />
+              <span>Guardando…</span>
+            </>
+          )}
+          {saveStatus === "saved" && (
+            <>
+              <CheckCircle2 className="h-3 w-3 text-green-500" />
+              <span className="text-green-600">Guardado</span>
+            </>
+          )}
+        </div>
+        <Button
+          size="sm"
+          onClick={handleSave}
+          disabled={saveStatus === "saving"}
+        >
+          Guardar
+        </Button>
       </div>
 
       <Card>

@@ -1,27 +1,18 @@
 "use client";
 
-import { useState } from "react";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
-export type ScoreMethod = "manual" | "summary";
+export type ScoreMethod = "manual";
 
 export interface ManualData {
   arrows: (number | "X" | "M")[];
 }
 
-export interface SummaryData {
-  tens: number;
-  xs: number;
-  nines: number;
-  below_8: number;
-  misses: number;
-}
-
 export interface ScoreResult {
   method: ScoreMethod;
-  data: ManualData | SummaryData;
+  data: ManualData;
   total_score: number;
   tens: number;
   xs: number;
@@ -31,24 +22,24 @@ export interface ScoreResult {
 }
 
 interface Props {
-  initialMethod?: ScoreMethod;
-  initialData?: ManualData | SummaryData | null;
+  initialData?: ManualData | null;
   onChange: (result: ScoreResult) => void;
 }
 
 const ARROW_COUNT = 6;
 
-function parseArrowValue(raw: string): number | "X" | "M" | null {
-  const v = raw.trim().toUpperCase();
-  if (v === "X") return "X";
-  if (v === "M" || v === "0") return "M";
-  const n = parseInt(v, 10);
-  if (!isNaN(n) && n >= 1 && n <= 10) return n;
-  return null;
-}
+type ArrowValue = number | "X" | "M";
+type KeyValue = ArrowValue | "DEL";
+
+// Rows 1-3 of the keyboard grid (4 cols each); DEL gets its own full-width row
+const KEYBOARD_ROWS: ArrowValue[][] = [
+  ["X", 10, 9, 8],
+  [7, 6, 5, 4],
+  [3, 2, 1, "M"],
+];
 
 function computeManual(
-  arrows: (number | "X" | "M")[],
+  arrows: ArrowValue[],
 ): Omit<ScoreResult, "method" | "data"> {
   let total = 0,
     tens = 0,
@@ -80,16 +71,31 @@ function computeManual(
   };
 }
 
-function computeSummary(d: SummaryData): Omit<ScoreResult, "method" | "data"> {
-  const total = d.xs * 10 + d.tens * 10 + d.nines * 9 + d.below_8 * 7;
-  return {
-    total_score: total,
-    tens: d.tens + d.xs,
-    xs: d.xs,
-    nines: d.nines,
-    below_8_count: d.below_8,
-    misses: d.misses,
-  };
+function slotColorClass(val: ArrowValue | null): string {
+  if (val === null) return "text-muted-foreground/40";
+  if (val === "X" || val === 10) return "text-yellow-500 font-bold";
+  if (val === 9 || val === 8) return "text-rose-500 font-semibold";
+  if (val === 7 || val === 6) return "text-blue-500 font-semibold";
+  if (val === 5 || val === 4) return "text-zinc-600 dark:text-zinc-300 font-medium";
+  if (val === "M") return "text-muted-foreground italic";
+  return "text-zinc-400 dark:text-zinc-500 font-medium"; // 1, 2, 3
+}
+
+function keyColorClass(val: KeyValue): string {
+  if (val === "DEL")
+    return "bg-muted text-muted-foreground hover:bg-muted/70 border border-border";
+  if (val === "X" || val === 10)
+    return "bg-yellow-100 text-yellow-700 hover:bg-yellow-200 dark:bg-yellow-900/30 dark:text-yellow-400 dark:hover:bg-yellow-900/50";
+  if (val === 9 || val === 8)
+    return "bg-rose-100 text-rose-700 hover:bg-rose-200 dark:bg-rose-900/30 dark:text-rose-400 dark:hover:bg-rose-900/50";
+  if (val === 7 || val === 6)
+    return "bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:hover:bg-blue-900/50";
+  if (val === 5 || val === 4)
+    return "bg-zinc-200 text-zinc-700 hover:bg-zinc-300 dark:bg-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-600";
+  if (val === "M")
+    return "bg-muted text-muted-foreground hover:bg-muted/70 border border-border";
+  // 1, 2, 3
+  return "bg-zinc-100 text-zinc-500 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700";
 }
 
 // ─── Manual Input ─────────────────────────────────────────────────────────────
@@ -98,132 +104,136 @@ function ManualInput({
   initialArrows,
   onChange,
 }: {
-  initialArrows?: (number | "X" | "M")[];
+  initialArrows?: ArrowValue[];
   onChange: (r: ScoreResult) => void;
 }) {
-  const init: string[] = Array.from({ length: ARROW_COUNT }, (_, i) => {
-    const v = initialArrows?.[i];
-    return v == null ? "" : v === "X" ? "X" : v === "M" ? "M" : String(v);
-  });
-  const [rawValues, setRawValues] = useState<string[]>(init);
+  const init: (ArrowValue | null)[] = Array.from(
+    { length: ARROW_COUNT },
+    (_, i) => initialArrows?.[i] ?? null,
+  );
 
-  function handleChange(index: number, raw: string) {
-    const next = [...rawValues];
-    next[index] = raw.toUpperCase();
-    setRawValues(next);
+  const [arrows, setArrows] = useState<(ArrowValue | null)[]>(init);
+  const [focusedIndex, setFocusedIndex] = useState(0);
 
-    const parsed = next
-      .map((v) => (v === "" ? null : parseArrowValue(v)))
-      .filter((v): v is number | "X" | "M" => v !== null);
-    const computed = computeManual(parsed);
-    onChange({
-      method: "manual",
-      data: { arrows: parsed } as ManualData,
-      ...computed,
-    });
+  // If opened with existing data, fire onChange immediately so Save is enabled
+  useEffect(() => {
+    const valid = init.filter((v): v is ArrowValue => v !== null);
+    if (valid.length > 0) {
+      onChange({ method: "manual", data: { arrows: valid }, ...computeManual(valid) });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function fireOnChange(next: (ArrowValue | null)[]) {
+    const valid = next.filter((v): v is ArrowValue => v !== null);
+    onChange({ method: "manual", data: { arrows: valid }, ...computeManual(valid) });
   }
 
-  const parsed = rawValues.map((v) => (v === "" ? null : parseArrowValue(v)));
-  const validArrows = parsed.filter((v): v is number | "X" | "M" => v !== null);
+  function handleKeyPress(val: ArrowValue) {
+    const next = [...arrows];
+    next[focusedIndex] = val;
+    setArrows(next);
+    fireOnChange(next);
+    if (focusedIndex < ARROW_COUNT - 1) {
+      setFocusedIndex(focusedIndex + 1);
+    }
+  }
+
+  function handleDelete() {
+    const next = [...arrows];
+    next[focusedIndex] = null;
+    setArrows(next);
+    fireOnChange(next);
+  }
+
+  const validArrows = arrows.filter((v): v is ArrowValue => v !== null);
   const { total_score } = computeManual(validArrows);
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-4">
+      {/* Arrow slots */}
       <div className="grid grid-cols-6 gap-2">
-        {Array.from({ length: ARROW_COUNT }, (_, i) => (
-          <div key={i} className="flex flex-col items-center gap-1">
-            <Label className="text-xs text-muted-foreground">{i + 1}</Label>
-            <Input
-              value={rawValues[i]}
-              onChange={(e) => handleChange(i, e.target.value)}
-              maxLength={2}
-              placeholder="—"
-              className={cn(
-                "text-center h-10 font-mono text-sm uppercase px-1",
-                parsed[i] === "X" && "text-yellow-600 font-bold",
-                parsed[i] === "M" && "text-muted-foreground",
-              )}
-            />
-          </div>
+        {arrows.map((val, i) => (
+          <button
+            key={i}
+            type="button"
+            onClick={() => setFocusedIndex(i)}
+            className={cn(
+              "flex flex-col items-center justify-center rounded-lg border-2 h-14 gap-0.5 transition-colors select-none",
+              focusedIndex === i
+                ? "border-primary bg-primary/5"
+                : "border-border bg-muted/40 hover:border-primary/40",
+            )}
+          >
+            <span className="text-[10px] text-muted-foreground leading-none">
+              {i + 1}
+            </span>
+            <span className={cn("text-lg leading-none", slotColorClass(val))}>
+              {val === null ? "—" : String(val)}
+            </span>
+          </button>
         ))}
       </div>
-      <p className="text-xs text-muted-foreground text-center">
-        Valores aceptados: 1–10, <span className="font-semibold">X</span> (10
-        especial), <span className="font-semibold">M</span> (fallo)
-      </p>
+
+      {/* Score summary */}
       <div className="flex justify-between items-center rounded-md bg-muted px-4 py-2 text-sm">
         <span className="text-muted-foreground">
           {validArrows.length} flecha{validArrows.length !== 1 ? "s" : ""}
         </span>
         <span className="font-bold text-base">{total_score} pts</span>
       </div>
-    </div>
-  );
-}
 
-// ─── Summary Input ────────────────────────────────────────────────────────────
-
-function SummaryInput({
-  initialData,
-  onChange,
-}: {
-  initialData?: SummaryData;
-  onChange: (r: ScoreResult) => void;
-}) {
-  const [values, setValues] = useState<SummaryData>({
-    tens: initialData?.tens ?? 0,
-    xs: initialData?.xs ?? 0,
-    nines: initialData?.nines ?? 0,
-    below_8: initialData?.below_8 ?? 0,
-    misses: initialData?.misses ?? 0,
-  });
-
-  function handleField(field: keyof SummaryData, raw: string) {
-    const n = Math.max(0, parseInt(raw, 10) || 0);
-    const next = { ...values, [field]: n };
-    setValues(next);
-    const computed = computeSummary(next);
-    onChange({ method: "summary", data: next as SummaryData, ...computed });
-  }
-
-  const { total_score } = computeSummary(values);
-  const fields: { key: keyof SummaryData; label: string }[] = [
-    { key: "xs", label: "Xs" },
-    { key: "tens", label: "10s" },
-    { key: "nines", label: "9s" },
-    { key: "below_8", label: "≤8" },
-    { key: "misses", label: "Fallos" },
-  ];
-
-  return (
-    <div className="flex flex-col gap-3">
-      <div className="grid grid-cols-5 gap-2">
-        {fields.map(({ key, label }) => (
-          <div key={key} className="flex flex-col items-center gap-1">
-            <Label className="text-xs text-muted-foreground">{label}</Label>
-            <Input
-              type="number"
-              min={0}
-              value={values[key]}
-              onChange={(e) => handleField(key, e.target.value)}
-              className="text-center h-10 font-mono text-sm px-1"
-            />
-          </div>
-        ))}
+      {/* Navigation */}
+      <div className="flex gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="flex-1"
+          disabled={focusedIndex === 0}
+          onClick={() => setFocusedIndex(focusedIndex - 1)}
+        >
+          ← Anterior
+        </Button>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="flex-1"
+          disabled={focusedIndex === ARROW_COUNT - 1}
+          onClick={() => setFocusedIndex(focusedIndex + 1)}
+        >
+          Siguiente →
+        </Button>
       </div>
-      <p className="text-xs text-muted-foreground text-center">
-        Puntuación estimada: X=10, 10=10, 9=9, ≤8 promedio=7
-      </p>
-      <div className="flex justify-between items-center rounded-md bg-muted px-4 py-2 text-sm">
-        <span className="text-muted-foreground">
-          {values.xs +
-            values.tens +
-            values.nines +
-            values.below_8 +
-            values.misses}{" "}
-          flechas
-        </span>
-        <span className="font-bold text-base">{total_score} pts</span>
+
+      {/* Custom keyboard */}
+      <div className="flex flex-col gap-2">
+        <div className="grid grid-cols-4 gap-2">
+          {KEYBOARD_ROWS.flat().map((key) => (
+            <button
+              key={String(key)}
+              type="button"
+              onClick={() => handleKeyPress(key)}
+              className={cn(
+                "h-12 rounded-lg text-sm font-semibold transition-colors active:scale-95",
+                keyColorClass(key),
+              )}
+            >
+              {String(key)}
+            </button>
+          ))}
+        </div>
+        <button
+          type="button"
+          onClick={handleDelete}
+          className={cn(
+            "w-full h-12 rounded-lg text-sm font-semibold transition-colors active:scale-95",
+            keyColorClass("DEL"),
+          )}
+        >
+          ⌫ Borrar
+        </button>
       </div>
     </div>
   );
@@ -231,52 +241,11 @@ function SummaryInput({
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-export function ScoreInput({
-  initialMethod = "manual",
-  initialData,
-  onChange,
-}: Props) {
-  const [method, setMethod] = useState<ScoreMethod>(initialMethod);
-
-  const tabs: { value: ScoreMethod; label: string }[] = [
-    { value: "manual", label: "Manual" },
-    { value: "summary", label: "Resumen" },
-  ];
-
+export function ScoreInput({ initialData, onChange }: Props) {
   return (
-    <div className="flex flex-col gap-3">
-      {/* Method tabs */}
-      <div className="flex rounded-lg border overflow-hidden">
-        {tabs.map(({ value, label }) => (
-          <button
-            key={value}
-            type="button"
-            onClick={() => setMethod(value)}
-            className={cn(
-              "flex-1 py-2 text-sm font-medium transition-colors",
-              method === value
-                ? "bg-primary text-primary-foreground"
-                : "bg-background text-muted-foreground hover:bg-muted",
-            )}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
-
-      {/* Score input by method */}
-      {method === "manual" && (
-        <ManualInput
-          initialArrows={(initialData as ManualData | undefined)?.arrows}
-          onChange={onChange}
-        />
-      )}
-      {method === "summary" && (
-        <SummaryInput
-          initialData={initialData as SummaryData | undefined}
-          onChange={onChange}
-        />
-      )}
-    </div>
+    <ManualInput
+      initialArrows={(initialData as ManualData | undefined)?.arrows}
+      onChange={onChange}
+    />
   );
 }
