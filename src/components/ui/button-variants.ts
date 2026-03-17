@@ -16,10 +16,10 @@ const buttonVariants = cva(
         destructive:
           "bg-destructive/15 text-destructive hover:bg-destructive/25 focus-visible:border-destructive/40 focus-visible:ring-destructive/20 shadow-[0_3px_0_rgba(0,0,0,0.12)] dark:bg-destructive/20 dark:hover:bg-destructive/30 dark:focus-visible:ring-destructive/40 dark:shadow-[0_3px_0_rgba(0,0,0,0.4)]",
         create:
-          "bg-emerald-500 text-white hover:bg-emerald-600 focus-visible:ring-emerald-500/30 shadow-[0_3px_0_#047857] dark:bg-emerald-600 dark:hover:bg-emerald-500 dark:shadow-[0_3px_0_#065f46]",
-        add: "bg-sky-500 text-white hover:bg-sky-600 focus-visible:ring-sky-500/30 shadow-[0_3px_0_#0369a1] dark:bg-sky-600 dark:hover:bg-sky-500 dark:shadow-[0_3px_0_#075985]",
+          "bg-brand-green text-white hover:bg-brand-green/80 focus-visible:ring-brand-green/30 shadow-[0_3px_0_#1a3824] dark:bg-brand-green/90 dark:hover:bg-brand-green dark:shadow-[0_3px_0_#152d1c]",
+        add: "bg-brand-teal text-white hover:bg-brand-teal/80 focus-visible:ring-brand-teal/30 shadow-[0_3px_0_#2d8a87] dark:bg-brand-teal/90 dark:hover:bg-brand-teal dark:shadow-[0_3px_0_#246b68]",
         delete:
-          "bg-rose-500 text-white hover:bg-rose-600 focus-visible:ring-rose-500/30 shadow-[0_3px_0_#be123c] dark:bg-rose-600 dark:hover:bg-rose-500 dark:shadow-[0_3px_0_#9f1239]",
+          "bg-brand-red text-white hover:bg-brand-red/80 focus-visible:ring-brand-red/30 shadow-[0_3px_0_#8f2020] dark:bg-brand-red/90 dark:hover:bg-brand-red dark:shadow-[0_3px_0_#701818]",
         link: "text-primary underline-offset-4 hover:underline",
       },
       size: {
