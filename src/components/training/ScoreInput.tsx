@@ -193,7 +193,7 @@ function ManualInput({
       </div>
 
       {/* Navigation */}
-      <div className="flex gap-2">
+      <div className="flex gap-2 mt-10">
         <Button
           type="button"
           variant="outline"

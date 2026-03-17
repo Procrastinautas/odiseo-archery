@@ -36,7 +36,7 @@ export async function getTrainingAdvice(
         weather: s.weather,
         physicalStatus: s.physical_status,
         finalThoughts: s.final_thoughts,
-        rounds: s.rounds?.map((r) => r.round_scores?.[0]),
+        rounds: s.rounds?.map((r) => r.round_scores),
       }))
     : [];
 

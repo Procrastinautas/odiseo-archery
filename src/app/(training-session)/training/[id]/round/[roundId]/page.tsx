@@ -32,7 +32,10 @@ export default async function RoundPage({
 
   return (
     <div className="flex flex-col">
-      <PageHeader title={`Ronda ${round.round_number}`} />
+      <PageHeader
+        title={`Ronda ${round.round_number}`}
+        backHref={`/training/${id}`}
+      />
       <RoundForm
         roundId={roundId}
         roundNumber={round.round_number}

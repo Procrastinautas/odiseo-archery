@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { upsertTrainingSession } from "@/actions/training";
-import { AIAdviceBanner } from "@/components/training/AIAdviceBanner";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -92,11 +91,6 @@ export function TrainingForm({ session, bows, arrows }: Props) {
 
   return (
     <div className="flex flex-col gap-4">
-      <AIAdviceBanner
-        trainingSessionId={session.id}
-        initialAdvice={session.ai_advice}
-      />
-
       <div className="flex justify-end items-center gap-3">
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
           {saveStatus === "saving" && (

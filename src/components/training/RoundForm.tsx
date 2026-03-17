@@ -66,8 +66,8 @@ export function RoundForm({
       />
 
       {error && <p className="text-destructive text-sm">{error}</p>}
-
-      <div className="flex gap-2">
+      <hr />
+      <div className="flex gap-2 mt-6">
         <Button
           type="button"
           variant="outline"

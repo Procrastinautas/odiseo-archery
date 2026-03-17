@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button-variants";
 import Link from "next/link";
-import { ArrowLeft, Sparkles } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import { ScoreChart } from "@/components/training/ScoreChart";
 
 const TYPE_LABELS: Record<string, string> = {
@@ -59,11 +59,11 @@ export default async function TrainingSummaryPage({
   // Compute aggregate totals
   const roundsWithScores = rounds ?? [];
   const totalScore = roundsWithScores.reduce(
-    (sum, r) => sum + (r.round_scores?.[0]?.total_score ?? 0),
+    (sum, r) => sum + (r.round_scores?.total_score ?? 0),
     0,
   );
   const totalArrows = roundsWithScores.reduce((sum, r) => {
-    const score = r.round_scores?.[0];
+    const score = r.round_scores;
     if (!score) return sum;
     if (score.method === "manual") {
       const data = score.data as { arrows?: unknown[] };
@@ -91,7 +91,7 @@ export default async function TrainingSummaryPage({
 
   const chartData = roundsWithScores.map((r) => ({
     name: `R${r.round_number}`,
-    puntaje: r.round_scores?.[0]?.total_score ?? 0,
+    puntaje: r.round_scores?.total_score ?? 0,
   }));
 
   const bow = session.bows as {
@@ -113,21 +113,9 @@ export default async function TrainingSummaryPage({
 
   return (
     <div className="flex flex-col">
-      <PageHeader title="Resumen de sesión" />
+      <PageHeader title="Resumen de sesión" backHref={`/training/${id}`} />
 
       <div className="flex flex-col gap-4 p-4">
-        {/* Back link */}
-        <Link
-          href={`/training/${id}`}
-          className={
-            buttonVariants({ variant: "ghost", size: "sm" }) +
-            " self-start -ml-1"
-          }
-        >
-          <ArrowLeft className="h-4 w-4 mr-1" />
-          Editar sesión
-        </Link>
-
         {/* Metadata */}
         <Card>
           <CardContent className="pt-4 flex flex-col gap-2">
@@ -227,7 +215,7 @@ export default async function TrainingSummaryPage({
             ) : (
               <p className="text-sm text-muted-foreground italic">
                 El resumen se generó al finalizar la sesión. Si no aparece,
-                regresa a la sesión y presiona "Finalizar sesión" nuevamente.
+                regresa a la sesión y presiona &quot;Finalizar sesión&quot; nuevamente.
               </p>
             )}
           </CardContent>
