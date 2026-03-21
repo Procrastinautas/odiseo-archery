@@ -1,12 +1,24 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
-import { upsertTrainingSession } from "@/actions/training";
+import {
+  deleteTrainingSession,
+  upsertTrainingSession,
+} from "@/actions/training";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -16,6 +28,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { CheckCircle2, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import type { Database } from "@/types/database";
 
@@ -44,9 +57,12 @@ interface Props {
 }
 
 export function TrainingForm({ session, bows, arrows }: Props) {
+  const router = useRouter();
   const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">(
     "idle",
   );
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const { register, getValues, setValue } = useForm<FormValues>({
     defaultValues: {
@@ -89,9 +105,29 @@ export function TrainingForm({ session, bows, arrows }: Props) {
     setTimeout(() => setSaveStatus("idle"), 2000);
   }
 
+  async function handleDeleteSession() {
+    setIsDeleting(true);
+    const result = await deleteTrainingSession(session.id);
+    if (result.error) {
+      toast.error(result.error);
+      setIsDeleting(false);
+      return;
+    }
+    toast.success("Sesión eliminada");
+    router.push("/training");
+  }
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex justify-end items-center gap-3">
+        <Button
+          size="sm"
+          variant="delete"
+          onClick={() => setIsDeleteDialogOpen(true)}
+          disabled={saveStatus === "saving" || isDeleting}
+        >
+          Eliminar sesión
+        </Button>
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
           {saveStatus === "saving" && (
             <>
@@ -109,11 +145,41 @@ export function TrainingForm({ session, bows, arrows }: Props) {
         <Button
           size="sm"
           onClick={handleSave}
-          disabled={saveStatus === "saving"}
+          disabled={saveStatus === "saving" || isDeleting}
         >
           Guardar
         </Button>
       </div>
+
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Eliminar sesión</DialogTitle>
+            <DialogDescription>
+              Esta acción eliminará la sesión completa junto con sus rondas y no
+              se puede deshacer.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsDeleteDialogOpen(false)}
+              disabled={isDeleting}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="button"
+              variant="delete"
+              onClick={handleDeleteSession}
+              disabled={isDeleting}
+            >
+              {isDeleting ? "Eliminando..." : "Eliminar sesión"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Card>
         <CardContent className="flex flex-col gap-4 pt-4">

@@ -7,6 +7,9 @@ import { buttonVariants } from "@/components/ui/button-variants";
 import Link from "next/link";
 import { Sparkles } from "lucide-react";
 import { ScoreChart } from "@/components/training/ScoreChart";
+import { getRecapDisplayText, parseCoachingPayload } from "@/lib/ai-json";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 const TYPE_LABELS: Record<string, string> = {
   control: "Control",
@@ -20,6 +23,18 @@ const WEATHER_LABELS: Record<string, string> = {
   rainy: "Lluvioso",
   heavy_rain: "Lluvia fuerte",
   windy: "Ventoso",
+};
+
+const PRIORITY_LABELS: Record<string, string> = {
+  alta: "Alta",
+  media: "Media",
+  baja: "Baja",
+};
+
+const PRIORITY_CLASSES: Record<string, string> = {
+  alta: "bg-red-500/15 text-red-700",
+  media: "bg-amber-500/15 text-amber-700",
+  baja: "bg-emerald-500/15 text-emerald-700",
 };
 
 export default async function TrainingSummaryPage({
@@ -71,12 +86,16 @@ export default async function TrainingSummaryPage({
     }
     if (score.method === "summary") {
       const data = score.data as {
+        arrow_count?: number;
         tens?: number;
         xs?: number;
         nines?: number;
         below_8?: number;
         misses?: number;
       };
+      if (typeof data.arrow_count === "number") {
+        return sum + data.arrow_count;
+      }
       return (
         sum +
         (data.tens ?? 0) +
@@ -110,6 +129,10 @@ export default async function TrainingSummaryPage({
     month: "long",
     year: "numeric",
   });
+
+  const recapText = getRecapDisplayText(session.ai_recap);
+  const recapPayload = parseCoachingPayload(session.ai_recap);
+  const recapAdviceList = recapPayload?.aa_advice_list ?? [];
 
   return (
     <div className="flex flex-col">
@@ -210,13 +233,70 @@ export default async function TrainingSummaryPage({
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {session.ai_recap ? (
-              <p className="text-sm leading-relaxed">{session.ai_recap}</p>
+            {recapText ? (
+              <div className="text-sm leading-relaxed">
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
+                  components={{
+                    p: ({ children }) => (
+                      <p className="mb-2 last:mb-0">{children}</p>
+                    ),
+                    ul: ({ children }) => (
+                      <ul className="list-disc pl-4 space-y-1">{children}</ul>
+                    ),
+                    ol: ({ children }) => (
+                      <ol className="list-decimal pl-4 space-y-1">
+                        {children}
+                      </ol>
+                    ),
+                  }}
+                >
+                  {recapText}
+                </ReactMarkdown>
+              </div>
             ) : (
               <p className="text-sm text-muted-foreground italic">
                 El resumen se generó al finalizar la sesión. Si no aparece,
-                regresa a la sesión y presiona &quot;Finalizar sesión&quot; nuevamente.
+                regresa a la sesión y presiona &quot;Finalizar sesión&quot;
+                nuevamente.
               </p>
+            )}
+
+            {recapAdviceList.length > 0 && (
+              <div className="mt-3 space-y-2">
+                <p className="text-xs font-medium text-muted-foreground">
+                  Consejos accionables
+                </p>
+                {recapAdviceList.map((item, index) => (
+                  <div
+                    key={`${item.title}-${index}`}
+                    className="rounded-md border border-border/60 bg-background/80 p-2"
+                  >
+                    <div className="mb-1 flex items-center justify-between gap-2">
+                      <div className="text-xs font-semibold leading-tight">
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                          {item.title}
+                        </ReactMarkdown>
+                      </div>
+                      <span
+                        className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${PRIORITY_CLASSES[item.priority]}`}
+                      >
+                        {PRIORITY_LABELS[item.priority]}
+                      </span>
+                    </div>
+                    <div className="text-xs leading-relaxed">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        {item.action}
+                      </ReactMarkdown>
+                    </div>
+                    <div className="mt-1 text-[11px] text-muted-foreground leading-relaxed">
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        {item.why}
+                      </ReactMarkdown>
+                    </div>
+                  </div>
+                ))}
+              </div>
             )}
           </CardContent>
         </Card>

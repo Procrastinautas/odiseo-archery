@@ -57,3 +57,26 @@ sudo dscacheutil -flushcache && sudo killall -HUP mDNSResponder
 - Then open: http://odiseo-archery.local:3030
 
 - If you prefer not to bind to a hostname, you can edit the `dev` script in `package.json` to remove the `--hostname` flag and use `http://localhost:3030` instead.
+
+## AI Provider Setup (Claude)
+
+The training advice and recap flow now uses Claude on the server.
+
+- Copy the environment template and fill in the values:
+
+```bash
+cp .env.local.example .env.local
+```
+
+- Required and optional AI variables:
+
+```bash
+CLAUDE_API_KEY=sk-ant-...
+# Optional. Defaults to claude-3-5-sonnet-latest
+CLAUDE_MODEL=claude-3-5-sonnet-latest
+```
+
+- `CLAUDE_API_KEY` is server-only and must never be exposed in `NEXT_PUBLIC_*` variables.
+- If `CLAUDE_API_KEY` is missing, AI actions return a controlled `IA no disponible` response.
+- AI outputs are persisted in `training_sessions.ai_advice` and `training_sessions.ai_recap` as structured JSON strings.
+- UI components parse that payload and render readable text plus actionable advice items.

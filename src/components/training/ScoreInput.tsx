@@ -2,28 +2,44 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
-export type ScoreMethod = "manual";
+export type ScoreMethod = "manual" | "summary";
 
 export interface ManualData {
   arrows: (number | "X" | "M")[];
 }
 
-export interface ScoreResult {
-  method: ScoreMethod;
-  data: ManualData;
+export interface SummaryData {
+  arrow_count: number;
+}
+
+type BaseScoreResult = {
   total_score: number;
   tens: number;
   xs: number;
   nines: number;
   below_8_count: number;
   misses: number;
-}
+};
+
+export type ManualScoreResult = BaseScoreResult & {
+  method: "manual";
+  data: ManualData;
+};
+
+export type SummaryScoreResult = BaseScoreResult & {
+  method: "summary";
+  data: SummaryData;
+};
+
+export type ScoreResult = ManualScoreResult | SummaryScoreResult;
 
 interface Props {
-  initialData?: ManualData | null;
-  onChange: (result: ScoreResult) => void;
+  mode: ScoreMethod;
+  initialData?: ManualData | SummaryData | null;
+  onChange: (result: ScoreResult | null) => void;
 }
 
 const ARROW_COUNT = 6;
@@ -106,7 +122,7 @@ function ManualInput({
   onChange,
 }: {
   initialArrows?: ArrowValue[];
-  onChange: (r: ScoreResult) => void;
+  onChange: (r: ScoreResult | null) => void;
 }) {
   const init: (ArrowValue | null)[] = Array.from(
     { length: ARROW_COUNT },
@@ -125,12 +141,18 @@ function ManualInput({
         data: { arrows: valid },
         ...computeManual(valid),
       });
+      return;
     }
+    onChange(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function fireOnChange(next: (ArrowValue | null)[]) {
     const valid = next.filter((v): v is ArrowValue => v !== null);
+    if (valid.length === 0) {
+      onChange(null);
+      return;
+    }
     onChange({
       method: "manual",
       data: { arrows: valid },
@@ -248,9 +270,101 @@ function ManualInput({
   );
 }
 
+function ArrowCountInput({
+  initialArrowCount,
+  onChange,
+}: {
+  initialArrowCount?: number;
+  onChange: (r: ScoreResult | null) => void;
+}) {
+  const [arrowCount, setArrowCount] = useState(
+    initialArrowCount && initialArrowCount > 0 ? String(initialArrowCount) : "",
+  );
+
+  useEffect(() => {
+    if (
+      initialArrowCount &&
+      Number.isInteger(initialArrowCount) &&
+      initialArrowCount > 0
+    ) {
+      onChange({
+        method: "summary",
+        data: { arrow_count: initialArrowCount },
+        total_score: 0,
+        tens: 0,
+        xs: 0,
+        nines: 0,
+        below_8_count: 0,
+        misses: 0,
+      });
+      return;
+    }
+    onChange(null);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function handleChange(value: string) {
+    const cleaned = value.replace(/[^0-9]/g, "");
+    setArrowCount(cleaned);
+
+    if (!cleaned) {
+      onChange(null);
+      return;
+    }
+
+    const parsed = Number(cleaned);
+    if (!Number.isInteger(parsed) || parsed <= 0) {
+      onChange(null);
+      return;
+    }
+
+    onChange({
+      method: "summary",
+      data: { arrow_count: parsed },
+      total_score: 0,
+      tens: 0,
+      xs: 0,
+      nines: 0,
+      below_8_count: 0,
+      misses: 0,
+    });
+  }
+
+  return (
+    <div className="flex flex-col gap-4 rounded-lg border border-border bg-muted/30 p-4">
+      <div className="space-y-1">
+        <p className="text-sm font-medium">Total de flechas disparadas</p>
+        <p className="text-xs text-muted-foreground">
+          Registra solo la cantidad de flechas de esta ronda.
+        </p>
+      </div>
+      <Input
+        type="number"
+        min={1}
+        step={1}
+        inputMode="numeric"
+        placeholder="Ej: 6"
+        value={arrowCount}
+        onChange={(e) => handleChange(e.target.value)}
+      />
+    </div>
+  );
+}
+
 // ─── Main Component ───────────────────────────────────────────────────────────
 
-export function ScoreInput({ initialData, onChange }: Props) {
+export function ScoreInput({ mode, initialData, onChange }: Props) {
+  if (mode === "summary") {
+    return (
+      <ArrowCountInput
+        initialArrowCount={
+          (initialData as SummaryData | undefined)?.arrow_count
+        }
+        onChange={onChange}
+      />
+    );
+  }
+
   return (
     <ManualInput
       initialArrows={(initialData as ManualData | undefined)?.arrows}

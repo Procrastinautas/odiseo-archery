@@ -16,8 +16,7 @@ import { upsertTrainingSession } from "@/actions/training";
 import type { Database, Json } from "@/types/database";
 
 type TrainingSession = Database["public"]["Tables"]["training_sessions"]["Row"];
-type ImprovementArea =
-  Database["public"]["Tables"]["improvement_areas"]["Row"];
+type ImprovementArea = Database["public"]["Tables"]["improvement_areas"]["Row"];
 type RoundScore = Database["public"]["Tables"]["round_scores"]["Row"];
 
 interface Round {
@@ -36,7 +35,7 @@ interface Props {
 
 const METHOD_LABELS: Record<string, string> = {
   manual: "Manual",
-  summary: "Resumen",
+  summary: "Solo flechas",
   target_map: "Mapa",
 };
 
@@ -190,7 +189,10 @@ export function SessionTabs({ session, rounds, improvementAreas }: Props) {
 
                       {/* Stats badges */}
                       {score &&
-                      (score.xs || score.tens || score.nines || score.misses) ? (
+                      (score.xs ||
+                        score.tens ||
+                        score.nines ||
+                        score.misses) ? (
                         <div className="flex gap-1.5 flex-wrap">
                           {score.xs ? (
                             <Badge
