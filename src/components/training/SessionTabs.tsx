@@ -33,11 +33,50 @@ interface Props {
   improvementAreas: ImprovementArea[];
 }
 
-const METHOD_LABELS: Record<string, string> = {
-  manual: "Manual",
-  summary: "Solo flechas",
-  target_map: "Mapa",
-};
+function getRoundArrowCount(score: RoundScore | null): number | null {
+  if (!score) return null;
+
+  if (score.method === "manual") {
+    const data = score.data as { arrows?: unknown[] };
+    return Array.isArray(data.arrows) ? data.arrows.length : null;
+  }
+
+  if (score.method === "summary") {
+    const data = score.data as {
+      arrow_count?: number;
+      tens?: number;
+      xs?: number;
+      nines?: number;
+      below_8?: number;
+      misses?: number;
+    };
+
+    if (typeof data.arrow_count === "number" && Number.isFinite(data.arrow_count)) {
+      return data.arrow_count;
+    }
+
+    return (
+      (data.tens ?? 0) +
+      (data.xs ?? 0) +
+      (data.nines ?? 0) +
+      (data.below_8 ?? 0) +
+      (data.misses ?? 0)
+    );
+  }
+
+  return null;
+}
+
+function getPreviousScoredRoundScore(rounds: Round[], index: number): number | null {
+  for (let i = index - 1; i >= 0; i -= 1) {
+    const value = rounds[i]?.round_scores?.total_score;
+    if (typeof value === "number" && Number.isFinite(value)) {
+      return value;
+    }
+  }
+
+  return null;
+}
 
 function arrowPreview(data: Json): string {
   const d = data as { arrows?: (number | string)[] };
@@ -109,6 +148,13 @@ export function SessionTabs({ session, rounds, improvementAreas }: Props) {
     0,
   );
 
+  const bestRoundScore = rounds.reduce<number | null>((best, round) => {
+    const score = round.round_scores?.total_score;
+    if (typeof score !== "number") return best;
+    if (best === null || score > best) return score;
+    return best;
+  }, null);
+
   return (
     <Tabs defaultValue="rounds" className="flex flex-col">
       <div className="px-4 pt-3">
@@ -127,7 +173,7 @@ export function SessionTabs({ session, rounds, improvementAreas }: Props) {
 
       {/* ── Rondas ── */}
       <TabsContent value="rounds">
-        <div className="flex flex-col gap-4 p-4">
+        <div className="flex flex-col gap-4 p-4 pb-28 sm:pb-6">
           {/* Session total banner */}
           {rounds.length > 0 && (
             <Card>
@@ -142,10 +188,24 @@ export function SessionTabs({ session, rounds, improvementAreas }: Props) {
 
           {/* Round cards */}
           {rounds.length > 0 ? (
-            rounds.map((round) => {
+            rounds.map((round, index) => {
               const score = round.round_scores ?? null;
               const preview =
                 score?.method === "manual" ? arrowPreview(score.data) : null;
+              const arrowCount = getRoundArrowCount(score);
+              const previousRoundScore = getPreviousScoredRoundScore(
+                rounds,
+                index,
+              );
+
+              const delta =
+                typeof score?.total_score === "number" &&
+                typeof previousRoundScore === "number"
+                  ? score.total_score - previousRoundScore
+                  : null;
+
+              const isBestRound =
+                bestRoundScore !== null && score?.total_score === bestRoundScore;
 
               return (
                 <Link
@@ -153,24 +213,53 @@ export function SessionTabs({ session, rounds, improvementAreas }: Props) {
                   href={`/training/${session.id}/round/${round.id}`}
                 >
                   <Card className="hover:bg-accent/30 transition-colors">
-                    <CardContent className="py-3 px-4 flex flex-col gap-1.5">
+                    <CardContent className="flex flex-col gap-2 px-4 py-3">
                       {/* Top row: round label + score */}
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-2">
-                          <span className="text-sm font-medium">
-                            Ronda {round.round_number}
-                          </span>
-                          {score && (
-                            <Badge variant="secondary" className="text-xs">
-                              {METHOD_LABELS[score.method] ?? score.method}
-                            </Badge>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-2">
-                          {score?.total_score != null ? (
-                            <span className="text-lg font-bold">
-                              {score.total_score} pts
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0 space-y-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-semibold">
+                              Ronda {round.round_number}
                             </span>
+                            {isBestRound ? (
+                              <Badge
+                                variant="outline"
+                                className="h-5 border-emerald-500/40 text-[10px] text-emerald-700 dark:text-emerald-300"
+                              >
+                                Mejor
+                              </Badge>
+                            ) : null}
+                          </div>
+
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            <span className="text-xs text-muted-foreground">
+                              {arrowCount !== null
+                                ? `${arrowCount} flechas`
+                                : "Flechas: sin datos"}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="flex shrink-0 items-center gap-2">
+                          {score?.total_score != null ? (
+                            <div className="flex items-baseline gap-1.5">
+                              <span className="text-xl font-bold leading-none">
+                                {score.total_score} pts
+                              </span>
+                              {delta !== null ? (
+                                <span
+                                  className={`text-xs font-semibold ${
+                                    delta > 0
+                                      ? "text-emerald-600"
+                                      : delta < 0
+                                        ? "text-red-500"
+                                        : "text-muted-foreground"
+                                  }`}
+                                >
+                                  {delta > 0 ? `+${delta}` : `${delta}`}
+                                </span>
+                              ) : null}
+                            </div>
                           ) : (
                             <span className="text-xs text-muted-foreground italic">
                               Sin puntuación
@@ -182,7 +271,7 @@ export function SessionTabs({ session, rounds, improvementAreas }: Props) {
 
                       {/* Arrow preview row (manual scores) */}
                       {preview && (
-                        <p className="text-xs text-muted-foreground font-mono tracking-wide">
+                        <p className="overflow-hidden text-ellipsis whitespace-nowrap text-xs font-mono tracking-wide text-muted-foreground">
                           {preview}
                         </p>
                       )}
@@ -239,7 +328,10 @@ export function SessionTabs({ session, rounds, improvementAreas }: Props) {
             </p>
           )}
 
-          <SessionActions trainingSessionId={session.id} />
+          <SessionActions
+            trainingSessionId={session.id}
+            isFinalized={Boolean(session.end_time)}
+          />
         </div>
       </TabsContent>
 

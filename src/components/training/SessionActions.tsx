@@ -21,14 +21,13 @@ import { toast } from "sonner";
 
 interface Props {
   trainingSessionId: string;
+  isFinalized: boolean;
 }
 
-export function SessionActions({ trainingSessionId }: Props) {
+export function SessionActions({ trainingSessionId, isFinalized }: Props) {
   const router = useRouter();
   const [isAddingRound, startAddRoundTransition] = useTransition();
   const [isFinalizing, startFinalizeTransition] = useTransition();
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
 
   const isBusy = isAddingRound || isFinalizing || isDeleting;
 
@@ -58,75 +57,36 @@ export function SessionActions({ trainingSessionId }: Props) {
     });
   }
 
-  async function handleDeleteSession() {
-    setIsDeleting(true);
-    const result = await deleteTrainingSession(trainingSessionId);
-    if (result.error) {
-      toast.error(result.error);
-      setIsDeleting(false);
-      return;
-    }
-    toast.success("Sesión eliminada");
-    router.push("/training");
-  }
 
   return (
-    <div className="flex flex-col gap-2">
-      <AddButton
-        type="button"
-        onClick={handleAddRound}
-        disabled={isBusy}
-        className="w-full"
-      >
-        {isAddingRound ? "Creando ronda..." : "Agregar ronda"}
-      </AddButton>
-      <Button
-        type="button"
-        onClick={handleFinalize}
-        disabled={isBusy}
-        className="w-full"
-      >
-        <FlagOff className="h-4 w-4 mr-2" />
-        {isFinalizing ? "Finalizando sesión..." : "Finalizar sesión"}
-      </Button>
-      <DeleteButton
-        type="button"
-        onClick={() => setIsDeleteDialogOpen(true)}
-        disabled={isBusy}
-        className="w-full"
-      >
-        Eliminar sesión
-      </DeleteButton>
+    <>
+      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border/70 bg-background/95 px-4 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] pt-2 backdrop-blur supports-[backdrop-filter]:bg-background/90 sm:static sm:rounded-lg sm:border sm:px-2 sm:py-2 sm:shadow-sm">
+        <div className="mx-auto w-full max-w-screen-sm">
+          <AddButton
+            type="button"
+            onClick={handleAddRound}
+            disabled={isBusy}
+            className="h-12 w-full text-[0.95rem] font-semibold"
+          >
+            {isAddingRound ? "Creando ronda..." : "Agregar ronda"}
+          </AddButton>
+        </div>
+      </div>
 
-      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Eliminar sesión</DialogTitle>
-            <DialogDescription>
-              Esta acción eliminará la sesión completa junto con sus rondas y no
-              se puede deshacer.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setIsDeleteDialogOpen(false)}
-              disabled={isDeleting}
-            >
-              Cancelar
-            </Button>
-            <Button
-              type="button"
-              variant="delete"
-              onClick={handleDeleteSession}
-              disabled={isDeleting}
-            >
-              {isDeleting ? "Eliminando..." : "Eliminar sesión"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
+      <div className="mt-5 flex flex-col gap-3">
+        {!isFinalized ? (
+          <Button
+            type="button"
+            onClick={handleFinalize}
+            disabled={isBusy}
+            className="h-11 w-full"
+          >
+            <FlagOff className="mr-2 h-4 w-4" />
+            {isFinalizing ? "Finalizando sesión..." : "Finalizar sesión"}
+          </Button>
+        ) : null}
+      </div>
+
+    </>
   );
 }
