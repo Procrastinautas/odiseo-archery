@@ -1,21 +1,9 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
-import {
-  createRound,
-  deleteTrainingSession,
-  finalizeTrainingSession,
-} from "@/actions/training";
-import { Button, AddButton, DeleteButton } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { useTransition } from "react";
+import { createRound, finalizeTrainingSession } from "@/actions/training";
+import { AddButton, Button } from "@/components/ui/button";
 import { FlagOff } from "lucide-react";
 import { toast } from "sonner";
 
@@ -24,12 +12,16 @@ interface Props {
   isFinalized: boolean;
 }
 
+function path(parts: string[]): string {
+  return ["", ...parts].join("/");
+}
+
 export function SessionActions({ trainingSessionId, isFinalized }: Props) {
   const router = useRouter();
   const [isAddingRound, startAddRoundTransition] = useTransition();
   const [isFinalizing, startFinalizeTransition] = useTransition();
 
-  const isBusy = isAddingRound || isFinalizing || isDeleting;
+  const isBusy = isAddingRound || isFinalizing;
 
   function handleAddRound() {
     startAddRoundTransition(async () => {
@@ -38,29 +30,29 @@ export function SessionActions({ trainingSessionId, isFinalized }: Props) {
         toast.error(result.error);
         return;
       }
+
       if (result.id) {
-        router.push(`/training/${trainingSessionId}/round/${result.id}`);
+        router.push(path(["training", trainingSessionId, "round", result.id]));
       }
     });
   }
 
   function handleFinalize() {
     startFinalizeTransition(async () => {
-      const finalizeResult = await finalizeTrainingSession(trainingSessionId);
-      if (finalizeResult.error) {
-        toast.error(finalizeResult.error);
+      const result = await finalizeTrainingSession(trainingSessionId);
+      if (result.error) {
+        toast.error(result.error);
         return;
       }
 
-      toast.success("Sesión finalizada");
-      router.push(`/training/${trainingSessionId}/summary`);
+      toast.success("Sesion finalizada");
+      router.push(path(["training", trainingSessionId, "summary"]));
     });
   }
 
-
   return (
     <>
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border/70 bg-background/95 px-4 pb-[calc(env(safe-area-inset-bottom)+0.75rem)] pt-2 backdrop-blur supports-[backdrop-filter]:bg-background/90 sm:static sm:rounded-lg sm:border sm:px-2 sm:py-2 sm:shadow-sm">
+      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-border/70 bg-background/95 px-4 py-2 backdrop-blur sm:static sm:rounded-lg sm:border sm:p-2 sm:shadow-sm">
         <div className="mx-auto w-full max-w-screen-sm">
           <AddButton
             type="button"
@@ -82,11 +74,10 @@ export function SessionActions({ trainingSessionId, isFinalized }: Props) {
             className="h-11 w-full"
           >
             <FlagOff className="mr-2 h-4 w-4" />
-            {isFinalizing ? "Finalizando sesión..." : "Finalizar sesión"}
+            {isFinalizing ? "Finalizando sesion..." : "Finalizar sesion"}
           </Button>
         ) : null}
       </div>
-
     </>
   );
 }
