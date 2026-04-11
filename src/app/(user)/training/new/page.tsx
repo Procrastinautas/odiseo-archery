@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { NewTrainingForm } from "@/components/training/NewTrainingForm";
+import { getRecentTrainingStartRecapCards } from "@/actions/training";
 
 export default async function NewTrainingPage() {
   const supabase = await createClient();
@@ -9,7 +10,7 @@ export default async function NewTrainingPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const [{ data: bows }, { data: arrows }] = await Promise.all([
+  const [{ data: bows }, { data: arrows }, recapCards] = await Promise.all([
     supabase
       .from("bows")
       .select("*")
@@ -20,7 +21,14 @@ export default async function NewTrainingPage() {
       .select("*")
       .eq("user_id", user.id)
       .order("created_at"),
+    getRecentTrainingStartRecapCards(2),
   ]);
 
-  return <NewTrainingForm bows={bows ?? []} arrows={arrows ?? []} />;
+  return (
+    <NewTrainingForm
+      bows={bows ?? []}
+      arrows={arrows ?? []}
+      recapCards={recapCards}
+    />
+  );
 }

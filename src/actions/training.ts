@@ -1,6 +1,11 @@
 "use server";
 
 import { createClient } from "@/lib/supabase/server";
+import {
+  getAdviceDisplayText,
+  getRecapDisplayText,
+  parseCoachingPayload,
+} from "@/lib/ai-json";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import type { Database, Json } from "@/types/database";
@@ -11,6 +16,15 @@ type TrainingUpdate =
   Database["public"]["Tables"]["training_sessions"]["Update"];
 type RoundScoreMethod =
   Database["public"]["Tables"]["round_scores"]["Row"]["method"];
+
+export interface TrainingStartRecapCard {
+  id: string;
+  created_at: string;
+  improvement_areas: string[];
+  final_reflection: string | null;
+  ai_summary: string | null;
+  ai_recommendations: string[];
+}
 
 type SessionOwnerRelation = { user_id: string } | Array<{ user_id: string }>;
 
@@ -30,6 +44,15 @@ function revalidateTrainingPages(trainingSessionId: string, roundId?: string) {
   } else {
     revalidatePath(`/training/${trainingSessionId}/round/[roundId]`, "page");
   }
+}
+
+function normalizeRecapText(value: string | null | undefined) {
+  if (!value) return null;
+  const normalized = value
+    .replace(/[ \t]+/g, " ")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+  return normalized.length ? normalized : null;
 }
 
 // ─── Training Sessions ────────────────────────────────────────────────────────
@@ -52,6 +75,72 @@ export async function createTrainingSession(
   if (error) return { error: error.message };
   revalidateTrainingPages(session.id);
   return { id: session.id };
+}
+
+export async function getRecentTrainingStartRecapCards(
+  limit = 2,
+): Promise<TrainingStartRecapCard[]> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+
+  const cappedLimit = Math.min(Math.max(limit, 1), 2);
+
+  const { data, error } = await supabase
+    .from("training_sessions")
+    .select(
+      "id, created_at, final_thoughts, ai_advice, ai_recap, improvement_areas(comment)",
+    )
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false })
+    .limit(cappedLimit);
+
+  if (error || !data) return [];
+
+  type RecapRow = {
+    id: string;
+    created_at: string;
+    final_thoughts: string | null;
+    ai_advice: string | null;
+    ai_recap: string | null;
+    improvement_areas: Array<{ comment: string }> | null;
+  };
+
+  return (data as RecapRow[]).map((row) => {
+    const advicePayload = parseCoachingPayload(row.ai_advice);
+    const recapPayload = parseCoachingPayload(row.ai_recap);
+
+    const aiSummary =
+      normalizeRecapText(advicePayload?.advice_text) ??
+      normalizeRecapText(getAdviceDisplayText(row.ai_advice));
+
+    const finalReflection =
+      normalizeRecapText(row.final_thoughts) ??
+      normalizeRecapText(recapPayload?.aa_recap) ??
+      normalizeRecapText(getRecapDisplayText(row.ai_recap));
+
+    const aiRecommendations =
+      advicePayload?.aa_advice_list
+        .map((item) => normalizeRecapText(`${item.title}: ${item.action}`))
+        .filter((item): item is string => Boolean(item))
+        .slice(0, 3) ?? [];
+
+    const improvementAreas = (row.improvement_areas ?? [])
+      .map((area) => normalizeRecapText(area.comment))
+      .filter((area): area is string => Boolean(area))
+      .slice(0, 4);
+
+    return {
+      id: row.id,
+      created_at: row.created_at,
+      improvement_areas: improvementAreas,
+      final_reflection: finalReflection,
+      ai_summary: aiSummary,
+      ai_recommendations: aiRecommendations,
+    };
+  });
 }
 
 export async function upsertTrainingSession(id: string, data: TrainingUpdate) {
