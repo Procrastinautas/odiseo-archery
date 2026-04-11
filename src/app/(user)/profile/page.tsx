@@ -1,4 +1,5 @@
 import { createClient } from "@/lib/supabase/server";
+import { signOut } from "@/actions/auth";
 import { redirect } from "next/navigation";
 import { ArcherCard } from "@/components/archer-card/ArcherCard";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -7,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { Separator } from "@/components/ui/separator";
 import Link from "next/link";
-import { Plus, Pencil } from "lucide-react";
+import { Plus, Pencil, LogOut } from "lucide-react";
 
 const BOW_LABELS: Record<string, string> = {
   recurve: "Recurvo",
@@ -36,13 +37,24 @@ export default async function ProfilePage() {
       <PageHeader
         title="Mi perfil"
         action={
-          <Link
-            href="/profile/edit"
-            className={buttonVariants({ size: "sm", variant: "outline" })}
-          >
-            <Pencil className="h-4 w-4 mr-1.5" />
-            Editar
-          </Link>
+          <>
+            <form action={signOut}>
+              <button
+                type="submit"
+                className={buttonVariants({ size: "sm", variant: "ghost" })}
+              >
+                <LogOut className="h-4 w-4 mr-1.5" />
+                Salir
+              </button>
+            </form>
+            <Link
+              href="/profile/edit"
+              className={buttonVariants({ size: "sm", variant: "outline" })}
+            >
+              <Pencil className="h-4 w-4 mr-1.5" />
+              Editar
+            </Link>
+          </>
         }
       />
 
