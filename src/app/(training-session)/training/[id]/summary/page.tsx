@@ -7,6 +7,7 @@ import { buttonVariants } from "@/components/ui/button-variants";
 import Link from "next/link";
 import { Sparkles } from "lucide-react";
 import { ScoreChart } from "@/components/training/ScoreChart";
+import { DeferredRecapContent } from "@/components/training/DeferredRecapContent";
 import { getRecapDisplayText, parseCoachingPayload } from "@/lib/ai-json";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -255,11 +256,7 @@ export default async function TrainingSummaryPage({
                 </ReactMarkdown>
               </div>
             ) : (
-              <p className="text-sm text-muted-foreground italic">
-                El resumen se generó al finalizar la sesión. Si no aparece,
-                regresa a la sesión y presiona &quot;Finalizar sesión&quot;
-                nuevamente.
-              </p>
+              <DeferredRecapContent trainingSessionId={id} />
             )}
 
             {recapAdviceList.length > 0 && (

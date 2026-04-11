@@ -7,7 +7,6 @@ import {
   deleteTrainingSession,
   finalizeTrainingSession,
 } from "@/actions/training";
-import { getSessionRecap } from "@/actions/ai";
 import { Button, AddButton, DeleteButton } from "@/components/ui/button";
 import {
   Dialog,
@@ -30,9 +29,6 @@ export function SessionActions({ trainingSessionId }: Props) {
   const [isFinalizing, startFinalizeTransition] = useTransition();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [finalizeStage, setFinalizeStage] = useState<
-    "saving" | "summarizing" | null
-  >(null);
 
   const isBusy = isAddingRound || isFinalizing || isDeleting;
 
@@ -51,23 +47,14 @@ export function SessionActions({ trainingSessionId }: Props) {
 
   function handleFinalize() {
     startFinalizeTransition(async () => {
-      setFinalizeStage("saving");
-
       const finalizeResult = await finalizeTrainingSession(trainingSessionId);
       if (finalizeResult.error) {
         toast.error(finalizeResult.error);
-        setFinalizeStage(null);
         return;
       }
 
-      setFinalizeStage("summarizing");
-      const recapResult = await getSessionRecap(trainingSessionId);
-      if (recapResult.error) {
-        toast.error(recapResult.error);
-      }
-
+      toast.success("Sesión finalizada");
       router.push(`/training/${trainingSessionId}/summary`);
-      setFinalizeStage(null);
     });
   }
 
@@ -100,11 +87,7 @@ export function SessionActions({ trainingSessionId }: Props) {
         className="w-full"
       >
         <FlagOff className="h-4 w-4 mr-2" />
-        {isFinalizing && finalizeStage === "saving"
-          ? "Guardando sesión..."
-          : isFinalizing && finalizeStage === "summarizing"
-            ? "Generando resumen IA..."
-            : "Finalizar sesión"}
+        {isFinalizing ? "Finalizando sesión..." : "Finalizar sesión"}
       </Button>
       <DeleteButton
         type="button"
