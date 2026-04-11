@@ -5,6 +5,20 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Target, Calendar, TrendingUp, Repeat } from "lucide-react";
 import type { Json } from "@/types/database";
 
+function isArrowOnlySummaryData(data: Json): boolean {
+  if (!data || typeof data !== "object" || Array.isArray(data)) return false;
+
+  const summary = data as Record<string, unknown>;
+  const hasArrowCount =
+    typeof summary.arrow_count === "number" &&
+    Number.isFinite(summary.arrow_count);
+  const hasBreakdownFields = ["tens", "xs", "nines", "below_8", "misses"].some(
+    (key) => key in summary,
+  );
+
+  return hasArrowCount && !hasBreakdownFields;
+}
+
 export default async function StatsPage() {
   const supabase = await createClient();
   const {
@@ -36,6 +50,15 @@ export default async function StatsPage() {
 
   const scores = roundScores
     .map((r) => r.total_score)
+    .filter((s): s is number => s !== null);
+
+  const averageScores = roundScores
+    .filter((score) => {
+      if (score.total_score === null) return false;
+      if (score.method !== "summary") return true;
+      return !isArrowOnlySummaryData(score.data as Json);
+    })
+    .map((score) => score.total_score)
     .filter((s): s is number => s !== null);
 
   const totalArrows = roundScores.reduce((sum, score) => {
@@ -73,8 +96,10 @@ export default async function StatsPage() {
     return sum;
   }, 0);
 
-  const avgScore = scores.length
-    ? Math.round(scores.reduce((a, b) => a + b, 0) / scores.length)
+  const avgScore = averageScores.length
+    ? Math.round(
+        averageScores.reduce((a, b) => a + b, 0) / averageScores.length,
+      )
     : null;
 
   const stats = [
