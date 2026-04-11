@@ -167,7 +167,7 @@ export function TrainingStartRecapCards({ recapCards, onContinue }: Props) {
                         </div>
                         <div className="rounded-md bg-muted px-2.5 py-2 text-[11px] leading-snug text-muted-foreground sm:text-xs">
                           Consejo: despues de terminar esta sesion agrega una
-                          reflexion final para mejorar este resumen.
+                          reflexión final para mejorar este resumen.
                         </div>
                       </div>
                     ) : (
@@ -201,11 +201,11 @@ export function TrainingStartRecapCards({ recapCards, onContinue }: Props) {
 
                           <section className="space-y-0.5">
                             <div className="text-xs font-semibold text-brand-bronze">
-                              Reflexion final
+                              Reflexión final
                             </div>
                             <p className="text-[13px] leading-snug text-muted-foreground whitespace-pre-wrap">
                               {slide.final_reflection ??
-                                "No hay reflexion final guardada."}
+                                "No hay reflexión final guardada."}
                             </p>
                           </section>
 
