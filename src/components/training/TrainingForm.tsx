@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import {
@@ -58,9 +58,8 @@ interface Props {
 
 export function TrainingForm({ session, bows, arrows }: Props) {
   const router = useRouter();
-  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">(
-    "idle",
-  );
+  const [isSaving, startSaveTransition] = useTransition();
+  const [isSaved, setIsSaved] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
 
@@ -87,22 +86,29 @@ export function TrainingForm({ session, bows, arrows }: Props) {
   async function handleSave() {
     const values = getValues();
     const distance = parseFloat(values.distance);
-    setSaveStatus("saving");
-    await upsertTrainingSession(session.id, {
-      type: values.type ?? null,
-      weather: values.weather ?? null,
-      distance: isNaN(distance) ? null : distance,
-      bow_id: values.bow_id || null,
-      arrow_id: values.arrow_id || null,
-      target_size: values.target_size || null,
-      physical_status: values.physical_status || null,
-      new_gear_notes: values.new_gear_notes || null,
-      final_thoughts: values.final_thoughts || null,
-      start_time: values.start_time || null,
-      end_time: values.end_time || null,
+    startSaveTransition(async () => {
+      const result = await upsertTrainingSession(session.id, {
+        type: values.type ?? null,
+        weather: values.weather ?? null,
+        distance: isNaN(distance) ? null : distance,
+        bow_id: values.bow_id || null,
+        arrow_id: values.arrow_id || null,
+        target_size: values.target_size || null,
+        physical_status: values.physical_status || null,
+        new_gear_notes: values.new_gear_notes || null,
+        final_thoughts: values.final_thoughts || null,
+        start_time: values.start_time || null,
+        end_time: values.end_time || null,
+      });
+
+      if (result.error) {
+        toast.error(result.error);
+        return;
+      }
+
+      setIsSaved(true);
+      setTimeout(() => setIsSaved(false), 2000);
     });
-    setSaveStatus("saved");
-    setTimeout(() => setSaveStatus("idle"), 2000);
   }
 
   async function handleDeleteSession() {
@@ -124,18 +130,18 @@ export function TrainingForm({ session, bows, arrows }: Props) {
           size="sm"
           variant="delete"
           onClick={() => setIsDeleteDialogOpen(true)}
-          disabled={saveStatus === "saving" || isDeleting}
+          disabled={isSaving || isDeleting}
         >
           Eliminar sesión
         </Button>
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          {saveStatus === "saving" && (
+          {isSaving && (
             <>
               <Loader2 className="h-3 w-3 animate-spin" />
               <span>Guardando…</span>
             </>
           )}
-          {saveStatus === "saved" && (
+          {isSaved && (
             <>
               <CheckCircle2 className="h-3 w-3 text-green-500" />
               <span className="text-green-600">Guardado</span>
@@ -145,7 +151,7 @@ export function TrainingForm({ session, bows, arrows }: Props) {
         <Button
           size="sm"
           onClick={handleSave}
-          disabled={saveStatus === "saving" || isDeleting}
+          disabled={isSaving || isDeleting}
         >
           Guardar
         </Button>

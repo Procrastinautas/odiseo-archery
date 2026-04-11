@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { createTrainingSession } from "@/actions/training";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Card, CardContent } from "@/components/ui/card";
@@ -21,6 +21,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { ChevronRight, ChevronLeft } from "lucide-react";
 import type { Database } from "@/types/database";
+import { toast } from "sonner";
 
 type Bow = Database["public"]["Tables"]["bows"]["Row"];
 type Arrow = Database["public"]["Tables"]["arrows"]["Row"];
@@ -47,7 +48,7 @@ interface Props {
 export function NewTrainingForm({ bows, arrows }: Props) {
   const router = useRouter();
   const [step, setStep] = useState<1 | 2>(1);
-  const [submitting, setSubmitting] = useState(false);
+  const [isPending, startTransition] = useTransition();
   const [serverError, setServerError] = useState<string | null>(null);
 
   const {
@@ -68,22 +69,25 @@ export function NewTrainingForm({ bows, arrows }: Props) {
     if (valid) setStep(2);
   }
 
-  async function onSubmit(values: FormValues) {
-    setSubmitting(true);
+  function onSubmit(values: FormValues) {
     setServerError(null);
     const distance = parseFloat(values.distance);
     if (isNaN(distance) || distance < 1) {
       setServerError("Ingresa una distancia válida");
-      setSubmitting(false);
       return;
     }
-    const result = await createTrainingSession({ ...values, distance });
-    if (result.error) {
-      setServerError(result.error);
-      setSubmitting(false);
-      return;
-    }
-    router.push(`/training/${result.id}`);
+
+    startTransition(async () => {
+      const result = await createTrainingSession({ ...values, distance });
+      if (result.error) {
+        setServerError(result.error);
+        toast.error(result.error);
+        return;
+      }
+
+      toast.success("Sesión creada");
+      router.push(`/training/${result.id}`);
+    });
   }
 
   return (
@@ -174,6 +178,7 @@ export function NewTrainingForm({ bows, arrows }: Props) {
             <Button
               type="button"
               onClick={goToStep2}
+              disabled={isPending}
               className="w-full"
             >
               Siguiente
@@ -224,9 +229,7 @@ export function NewTrainingForm({ bows, arrows }: Props) {
                       {arrows.map((arrow) => (
                         <SelectItem key={arrow.id} value={arrow.id}>
                           {arrow.brand}
-                          {arrow.diameter_mm
-                            ? ` · ${arrow.diameter_mm}mm`
-                            : ""}
+                          {arrow.diameter_mm ? ` · ${arrow.diameter_mm}mm` : ""}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -281,13 +284,14 @@ export function NewTrainingForm({ bows, arrows }: Props) {
                 type="button"
                 variant="outline"
                 onClick={() => setStep(1)}
+                disabled={isPending}
                 className="flex-1"
               >
                 <ChevronLeft className="h-4 w-4 mr-1" />
                 Atrás
               </Button>
-              <Button type="submit" disabled={submitting} className="flex-1">
-                {submitting ? "Iniciando..." : "Comenzar"}
+              <Button type="submit" disabled={isPending} className="flex-1">
+                {isPending ? "Creando sesión..." : "Comenzar"}
               </Button>
             </div>
           </>

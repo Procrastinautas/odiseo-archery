@@ -106,14 +106,11 @@ export default async function TrainingPage() {
       <div className="flex flex-col gap-3 p-4">
         {sessions?.length ? (
           sessions.map((session) => {
-            const startTime = formatTime(session.start_time);
-            const endTime = formatTime(session.end_time);
             const isFinished = Boolean(session.end_time);
             const totalArrows = getTotalArrows(session.rounds);
             const WeatherIcon = session.weather
               ? getWeatherIcon(session.weather)
               : null;
-
             return (
               <Card
                 key={session.id}
@@ -131,21 +128,22 @@ export default async function TrainingPage() {
                     >
                       <div className="space-y-1 min-w-0">
                         <p className="font-medium text-sm">
-                          {startTime || endTime
-                            ? [
-                                startTime ? `Inicio ${startTime}` : null,
-                                endTime ? `Fin ${endTime}` : null,
-                              ]
-                                .filter(Boolean)
-                                .join(" · ")
-                            : formatDate(session.created_at)}
+                          {session.start_time ? (
+                            <>
+                              {new Date(session.start_time).toLocaleDateString(
+                                "es-CO",
+                                {
+                                  weekday: "short",
+                                  day: "numeric",
+                                  month: "short",
+                                  year: "numeric",
+                                },
+                              )}
+                            </>
+                          ) : (
+                            ["Sin fecha de inicio"]
+                          )}
                         </p>
-
-                        {(startTime || endTime) && (
-                          <p className="text-xs text-muted-foreground">
-                            {formatDate(session.created_at)}
-                          </p>
-                        )}
 
                         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
                           {session.distance ? (

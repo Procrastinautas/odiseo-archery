@@ -26,13 +26,23 @@ interface Props {
 
 export function SessionActions({ trainingSessionId }: Props) {
   const router = useRouter();
-  const [isPending, startTransition] = useTransition();
+  const [isAddingRound, startAddRoundTransition] = useTransition();
+  const [isFinalizing, startFinalizeTransition] = useTransition();
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [finalizeStage, setFinalizeStage] = useState<
+    "saving" | "summarizing" | null
+  >(null);
+
+  const isBusy = isAddingRound || isFinalizing || isDeleting;
 
   function handleAddRound() {
-    startTransition(async () => {
+    startAddRoundTransition(async () => {
       const result = await createRound(trainingSessionId);
+      if (result.error) {
+        toast.error(result.error);
+        return;
+      }
       if (result.id) {
         router.push(`/training/${trainingSessionId}/round/${result.id}`);
       }
@@ -40,10 +50,24 @@ export function SessionActions({ trainingSessionId }: Props) {
   }
 
   function handleFinalize() {
-    startTransition(async () => {
-      await finalizeTrainingSession(trainingSessionId);
-      await getSessionRecap(trainingSessionId);
+    startFinalizeTransition(async () => {
+      setFinalizeStage("saving");
+
+      const finalizeResult = await finalizeTrainingSession(trainingSessionId);
+      if (finalizeResult.error) {
+        toast.error(finalizeResult.error);
+        setFinalizeStage(null);
+        return;
+      }
+
+      setFinalizeStage("summarizing");
+      const recapResult = await getSessionRecap(trainingSessionId);
+      if (recapResult.error) {
+        toast.error(recapResult.error);
+      }
+
       router.push(`/training/${trainingSessionId}/summary`);
+      setFinalizeStage(null);
     });
   }
 
@@ -64,24 +88,28 @@ export function SessionActions({ trainingSessionId }: Props) {
       <AddButton
         type="button"
         onClick={handleAddRound}
-        disabled={isPending || isDeleting}
+        disabled={isBusy}
         className="w-full"
       >
-        Agregar ronda
+        {isAddingRound ? "Creando ronda..." : "Agregar ronda"}
       </AddButton>
       <Button
         type="button"
         onClick={handleFinalize}
-        disabled={isPending || isDeleting}
+        disabled={isBusy}
         className="w-full"
       >
         <FlagOff className="h-4 w-4 mr-2" />
-        {isPending ? "Finalizando..." : "Finalizar sesión"}
+        {isFinalizing && finalizeStage === "saving"
+          ? "Guardando sesión..."
+          : isFinalizing && finalizeStage === "summarizing"
+            ? "Generando resumen IA..."
+            : "Finalizar sesión"}
       </Button>
       <DeleteButton
         type="button"
         onClick={() => setIsDeleteDialogOpen(true)}
-        disabled={isPending || isDeleting}
+        disabled={isBusy}
         className="w-full"
       >
         Eliminar sesión

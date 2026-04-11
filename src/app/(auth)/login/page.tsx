@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useState, useTransition } from "react";
 import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,7 +27,7 @@ function LoginForm() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [formError, setFormError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [isPending, startTransition] = useTransition();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
@@ -49,24 +49,22 @@ function LoginForm() {
       return;
     }
 
-    setLoading(true);
-
-    if (mode === "login") {
-      const result = await signInWithEmail(email, password);
-      if (result?.error) {
-        setFormError("Correo o contraseña incorrectos");
-        setLoading(false);
+    startTransition(async () => {
+      if (mode === "login") {
+        const result = await signInWithEmail(email, password);
+        if (result?.error) {
+          setFormError("Correo o contraseña incorrectos");
+        }
+        return;
       }
-    } else {
+
       const result = await signUpWithEmail(email, password);
       if (result?.error) {
         setFormError(result.error);
-        setLoading(false);
       } else if (result?.needsConfirmation) {
         setSuccessMessage("Revisa tu correo para confirmar tu cuenta");
-        setLoading(false);
       }
-    }
+    });
   }
 
   return (
@@ -169,8 +167,8 @@ function LoginForm() {
               {successMessage}
             </p>
           )}
-          <Button type="submit" className="w-full" disabled={loading}>
-            {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          <Button type="submit" className="w-full" disabled={isPending}>
+            {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {mode === "login" ? "Iniciar sesión" : "Crear cuenta"}
           </Button>
         </form>
