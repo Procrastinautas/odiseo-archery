@@ -22,22 +22,26 @@ test.describe.serial("Training lifecycle", () => {
     const form = newTrainingPage(page);
 
     // Phase 0: dismiss recap gate
-    await expect(form.continueButton).toBeVisible();
+    await expect(form.continueButton).toBeVisible({ timeout: 10000 });
     await form.continueButton.click();
 
+    // Wait for form to appear after recap gate is dismissed
+    await expect(form.nextButton).toBeVisible({ timeout: 10000 });
+
     // Step 1: required fields
-    await expect(form.typeCombobox).toBeVisible();
     await form.typeCombobox.click();
     await page.getByRole("option", { name: "Entrenamiento" }).click();
+    await page.waitForTimeout(500);
 
     await form.weatherCombobox.click();
     await page.getByRole("option", { name: "Soleado" }).click();
+    await page.waitForTimeout(500);
 
     await form.distanceInput.fill("18");
     await form.nextButton.click();
 
     // Step 2: submit with optional fields skipped
-    await expect(form.submitButton).toBeVisible();
+    await expect(form.submitButton).toBeVisible({ timeout: 10000 });
     await form.submitButton.click();
 
     // Verify redirect to session detail

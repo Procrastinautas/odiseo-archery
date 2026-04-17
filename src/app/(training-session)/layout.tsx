@@ -1,3 +1,5 @@
+import { SyncProvider } from "@/components/training/SyncProvider";
+
 export default function TrainingSessionLayout({
   children,
 }: {
@@ -5,7 +7,9 @@ export default function TrainingSessionLayout({
 }) {
   return (
     <div className="flex flex-col min-h-svh">
-      <main className="flex-1">{children}</main>
+      <SyncProvider>
+        <main className="flex-1">{children}</main>
+      </SyncProvider>
     </div>
   );
 }

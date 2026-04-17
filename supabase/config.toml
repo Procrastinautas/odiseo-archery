@@ -1,0 +1,5 @@
+# Supabase Configuration
+
+[db]
+port = 55432
+major_version = 15

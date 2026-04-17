@@ -6,6 +6,7 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { AIAdviceBanner } from "@/components/training/AIAdviceBanner";
 import { ImprovementAreas } from "@/components/training/ImprovementAreas";
 import { SessionActions } from "@/components/training/SessionActions";
+import { SyncStatusIndicator } from "@/components/training/SyncStatusIndicator";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -13,6 +14,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { CheckCircle2, Loader2, Pencil } from "lucide-react";
 import { upsertTrainingSession } from "@/actions/training";
+import { toast } from "sonner";
+import { getTrainingSaveToastMessage } from "@/lib/training-save-feedback";
 import type { Database, Json } from "@/types/database";
 
 type TrainingSession = Database["public"]["Tables"]["training_sessions"]["Row"];
@@ -51,7 +54,10 @@ function getRoundArrowCount(score: RoundScore | null): number | null {
       misses?: number;
     };
 
-    if (typeof data.arrow_count === "number" && Number.isFinite(data.arrow_count)) {
+    if (
+      typeof data.arrow_count === "number" &&
+      Number.isFinite(data.arrow_count)
+    ) {
       return data.arrow_count;
     }
 
@@ -67,7 +73,10 @@ function getRoundArrowCount(score: RoundScore | null): number | null {
   return null;
 }
 
-function getPreviousScoredRoundScore(rounds: Round[], index: number): number | null {
+function getPreviousScoredRoundScore(
+  rounds: Round[],
+  index: number,
+): number | null {
   for (let i = index - 1; i >= 0; i -= 1) {
     const value = rounds[i]?.round_scores?.total_score;
     if (typeof value === "number" && Number.isFinite(value)) {
@@ -93,12 +102,32 @@ function FinalThoughtsInput({
 }) {
   const [value, setValue] = useState(initialValue);
   const [status, setStatus] = useState<"idle" | "saving" | "saved">("idle");
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [, startTransition] = useTransition();
 
   function handleSave() {
+    setSaveError(null);
     setStatus("saving");
     startTransition(async () => {
-      await upsertTrainingSession(sessionId, { final_thoughts: value });
+      const result = await upsertTrainingSession(sessionId, {
+        final_thoughts: value,
+      });
+
+      if (result.error) {
+        const message = getTrainingSaveToastMessage(
+          "la reflexión final",
+          result.error,
+        );
+        toast.error(message);
+        console.error("Error al guardar la reflexión final", {
+          sessionId,
+          error: result.error,
+        });
+        setSaveError(message);
+        setStatus("idle");
+        return;
+      }
+
       setStatus("saved");
       setTimeout(() => setStatus("idle"), 2000);
     });
@@ -125,10 +154,14 @@ function FinalThoughtsInput({
       </div>
       <Textarea
         value={value}
-        onChange={(e) => setValue(e.target.value)}
+        onChange={(e) => {
+          setValue(e.target.value);
+          if (saveError) setSaveError(null);
+        }}
         placeholder="Pensamientos finales sobre la sesión..."
         rows={4}
       />
+      {saveError && <p className="text-xs text-destructive">{saveError}</p>}
       <Button
         size="sm"
         variant="outline"
@@ -174,6 +207,8 @@ export function SessionTabs({ session, rounds, improvementAreas }: Props) {
       {/* ── Rondas ── */}
       <TabsContent value="rounds">
         <div className="flex flex-col gap-4 p-4 pb-28 sm:pb-6">
+          <SyncStatusIndicator />
+
           {/* Session total banner */}
           {rounds.length > 0 && (
             <Card>
@@ -205,7 +240,8 @@ export function SessionTabs({ session, rounds, improvementAreas }: Props) {
                   : null;
 
               const isBestRound =
-                bestRoundScore !== null && score?.total_score === bestRoundScore;
+                bestRoundScore !== null &&
+                score?.total_score === bestRoundScore;
 
               return (
                 <Link
@@ -331,6 +367,7 @@ export function SessionTabs({ session, rounds, improvementAreas }: Props) {
           <SessionActions
             trainingSessionId={session.id}
             isFinalized={Boolean(session.end_time)}
+            currentRoundCount={rounds.length}
           />
         </div>
       </TabsContent>

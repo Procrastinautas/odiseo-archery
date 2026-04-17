@@ -1,0 +1,3 @@
+- The flow of starting a session, and creating rounds, and saving rounds should be seamless. store locally and on the background sync.
+- The start and end time seem to be having some timezone issues. its saving using users timezone (UTC - 5) but when presenting the data its failing.
+-

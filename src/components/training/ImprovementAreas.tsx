@@ -1,15 +1,16 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import {
-  createImprovementArea,
-  deleteImprovementArea,
-} from "@/actions/training";
+import { deleteImprovementArea } from "@/actions/training";
+import { enqueue } from "@/lib/sync-engine";
+import { db } from "@/lib/local-db";
+import { generateUUID } from "@/lib/uuid";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Trash2, Plus } from "lucide-react";
+import { Trash2, Plus, Clock } from "lucide-react";
 import type { Database } from "@/types/database";
 import { Textarea } from "../ui/textarea";
+import { toast } from "sonner";
+import { getTrainingSaveToastMessage } from "@/lib/training-save-feedback";
 
 type ImprovementArea = Database["public"]["Tables"]["improvement_areas"]["Row"];
 
@@ -18,8 +19,12 @@ interface Props {
   initialAreas: ImprovementArea[];
 }
 
+interface LocalArea extends ImprovementArea {
+  syncStatus?: "pending" | "synced";
+}
+
 export function ImprovementAreas({ trainingSessionId, initialAreas }: Props) {
-  const [areas, setAreas] = useState(initialAreas);
+  const [areas, setAreas] = useState<LocalArea[]>(initialAreas);
   const [newComment, setNewComment] = useState("");
   const [isPending, startTransition] = useTransition();
 
@@ -27,28 +32,69 @@ export function ImprovementAreas({ trainingSessionId, initialAreas }: Props) {
     const trimmed = newComment.trim();
     if (!trimmed) return;
     startTransition(async () => {
-      const result = await createImprovementArea(trainingSessionId, trimmed);
-      if (!result.error) {
-        // Optimistically add with temp id; page revalidation will sync
-        setAreas((prev) => [
-          ...prev,
-          {
-            id: crypto.randomUUID(),
-            training_session_id: trainingSessionId,
-            comment: trimmed,
-            attachment_url: null,
-            created_at: new Date().toISOString(),
-          },
-        ]);
-        setNewComment("");
-      }
+      const clientId = generateUUID();
+      const newArea: LocalArea = {
+        id: clientId,
+        training_session_id: trainingSessionId,
+        comment: trimmed,
+        attachment_url: null,
+        created_at: new Date().toISOString(),
+        syncStatus: "pending",
+      };
+
+      // Optimistically add to local state
+      setAreas((prev) => [...prev, newArea]);
+      setNewComment("");
+
+      // Enqueue for background sync
+      await enqueue({
+        type: "CREATE_IMPROVEMENT_AREA",
+        opId: clientId,
+        payload: {
+          trainingSessionId,
+          comment: trimmed,
+          clientId,
+        },
+        sessionId: trainingSessionId,
+      });
+
+      toast.success("Área agregada");
     });
   }
 
   function handleDelete(id: string) {
     startTransition(async () => {
-      await deleteImprovementArea(id);
+      // Check if this is a pending area (hasn't synced yet)
+      const area = areas.find((a) => a.id === id);
+      const isPendingArea = area?.syncStatus === "pending";
+
+      if (isPendingArea) {
+        // Remove from local state and cancel sync
+        setAreas((prev) => prev.filter((a) => a.id !== id));
+        if (db) {
+          await db.syncQueue.where("opId").equals(id).delete();
+        }
+        toast.success("Área removida");
+        return;
+      }
+
+      // For synced areas, delete from server
+      const result = await deleteImprovementArea(id);
+      if (result.error) {
+        const message = getTrainingSaveToastMessage(
+          "el área a mejorar",
+          result.error,
+        );
+        toast.error(message);
+        console.error("Error al eliminar un área a mejorar", {
+          trainingSessionId,
+          areaId: id,
+          error: result.error,
+        });
+        return;
+      }
       setAreas((prev) => prev.filter((a) => a.id !== id));
+      toast.success("Área eliminada");
     });
   }
 
@@ -58,9 +104,14 @@ export function ImprovementAreas({ trainingSessionId, initialAreas }: Props) {
       {areas.map((area) => (
         <div
           key={area.id}
-          className="flex items-center gap-2 rounded-md border px-3 py-2"
+          className={`flex items-center gap-2 rounded-md border px-3 py-2 ${
+            area.syncStatus === "pending" ? "opacity-60" : ""
+          }`}
         >
           <span className="flex-1 text-sm">{area.comment}</span>
+          {area.syncStatus === "pending" && (
+            <Clock className="h-3.5 w-3.5 text-muted-foreground animate-spin" />
+          )}
           <button
             type="button"
             onClick={() => handleDelete(area.id)}

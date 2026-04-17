@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { NewTrainingForm } from "@/components/training/NewTrainingForm";
+import { NewTrainingFormClient } from "@/components/training/NewTrainingFormClient";
 import { getRecentTrainingStartRecapCards } from "@/actions/training";
 
 export default async function NewTrainingPage() {
@@ -25,7 +25,7 @@ export default async function NewTrainingPage() {
   ]);
 
   return (
-    <NewTrainingForm
+    <NewTrainingFormClient
       bows={bows ?? []}
       arrows={arrows ?? []}
       recapCards={recapCards}

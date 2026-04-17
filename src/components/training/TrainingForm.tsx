@@ -31,6 +31,11 @@ import { CheckCircle2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import type { Database } from "@/types/database";
+import { getTrainingSaveToastMessage } from "@/lib/training-save-feedback";
+import {
+  formatUtcIsoToDatetimeLocalValue,
+  parseDatetimeLocalValueToUtcIso,
+} from "@/lib/datetime";
 
 type TrainingSession = Database["public"]["Tables"]["training_sessions"]["Row"];
 type Bow = Database["public"]["Tables"]["bows"]["Row"];
@@ -74,12 +79,8 @@ export function TrainingForm({ session, bows, arrows }: Props) {
       physical_status: session.physical_status ?? "",
       new_gear_notes: session.new_gear_notes ?? "",
       final_thoughts: session.final_thoughts ?? "",
-      start_time: session.start_time
-        ? new Date(session.start_time).toISOString().slice(0, 16)
-        : "",
-      end_time: session.end_time
-        ? new Date(session.end_time).toISOString().slice(0, 16)
-        : "",
+      start_time: formatUtcIsoToDatetimeLocalValue(session.start_time),
+      end_time: formatUtcIsoToDatetimeLocalValue(session.end_time),
     },
   });
 
@@ -97,12 +98,17 @@ export function TrainingForm({ session, bows, arrows }: Props) {
         physical_status: values.physical_status || null,
         new_gear_notes: values.new_gear_notes || null,
         final_thoughts: values.final_thoughts || null,
-        start_time: values.start_time || null,
-        end_time: values.end_time || null,
+        start_time: parseDatetimeLocalValueToUtcIso(values.start_time),
+        end_time: parseDatetimeLocalValueToUtcIso(values.end_time),
       });
 
       if (result.error) {
-        toast.error(result.error);
+        const message = getTrainingSaveToastMessage("la sesión", result.error);
+        toast.error(message);
+        console.error("Error al guardar la sesión", {
+          sessionId: session.id,
+          error: result.error,
+        });
         return;
       }
 

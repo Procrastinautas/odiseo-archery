@@ -2,7 +2,8 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { deleteRound, upsertRoundScore } from "@/actions/training";
+import { deleteRound } from "@/actions/training";
+import { enqueue } from "@/lib/sync-engine";
 import { ScoreInput } from "@/components/training/ScoreInput";
 import type {
   ScoreMethod,
@@ -20,6 +21,7 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import type { Database, Json } from "@/types/database";
+import { getTrainingSaveToastMessage } from "@/lib/training-save-feedback";
 
 type RoundScore = Database["public"]["Tables"]["round_scores"]["Row"];
 
@@ -50,13 +52,15 @@ export function RoundForm({
     if (nextMode === mode) return;
     setMode(nextMode);
     setResult(null);
+    setError(null);
   }
 
   function handleSubmit() {
     if (!result) return;
     setError(null);
     startTransition(async () => {
-      const res = await upsertRoundScore(roundId, {
+      const payload = {
+        roundId,
         method: result.method,
         data: result.data as unknown as Json,
         total_score: result.total_score,
@@ -65,11 +69,17 @@ export function RoundForm({
         nines: result.nines,
         below_8_count: result.below_8_count,
         misses: result.misses,
+      };
+
+      // Enqueue for background sync
+      await enqueue({
+        type: "SAVE_ROUND_SCORE",
+        opId: roundId,
+        payload,
+        sessionId: trainingSessionId,
       });
-      if (res.error) {
-        setError(res.error);
-        return;
-      }
+
+      toast.success("Ronda guardada");
       router.push(`/training/${trainingSessionId}`);
     });
   }
@@ -78,7 +88,12 @@ export function RoundForm({
     setIsDeleting(true);
     const res = await deleteRound(roundId);
     if (res.error) {
-      toast.error(res.error);
+      const message = getTrainingSaveToastMessage("la ronda", res.error);
+      toast.error(message);
+      console.error("Error al eliminar la ronda", {
+        roundId,
+        error: res.error,
+      });
       setIsDeleting(false);
       return;
     }

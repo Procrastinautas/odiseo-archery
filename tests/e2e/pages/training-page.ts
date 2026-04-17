@@ -17,10 +17,8 @@ export function newTrainingPage(page: Page) {
     continueButton: page.getByRole("button", { name: "Continuar a nueva sesion" }),
 
     // Step 1
-    typeCombobox: page.getByRole("combobox", { name: "Selecciona el tipo" }),
-    weatherCombobox: page.getByRole("combobox", {
-      name: "Selecciona el clima",
-    }),
+    typeCombobox: page.locator("div").filter({ hasText: /Tipo/ }).locator('[role="combobox"]').first(),
+    weatherCombobox: page.locator("div").filter({ hasText: /Clima/ }).locator('[role="combobox"]').first(),
     distanceInput: page.locator('input[name="distance"]'),
     nextButton: page.getByRole("button", { name: "Siguiente" }),
 

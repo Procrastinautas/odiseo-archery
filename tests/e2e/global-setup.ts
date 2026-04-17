@@ -43,9 +43,12 @@ export default async function globalSetup(config: FullConfig) {
   try {
     await page.goto(`${baseURL}/login`);
     await page.getByLabel("Correo electrónico").fill(TEST_USER_EMAIL);
-    await page.getByLabel("Contraseña").fill(TEST_USER_PASSWORD);
+    await page
+      .getByRole("textbox", { name: "Contraseña" })
+      .fill(TEST_USER_PASSWORD);
     await page.getByRole("button", { name: "Iniciar sesión" }).click();
-    await page.waitForURL(/\/training/, { timeout: 15000 });
+    // Wait for redirect after successful login (either /dashboard or /training works)
+    await page.waitForURL(/\/(dashboard|training)/, { timeout: 15000 });
 
     await context.storageState({ path: AUTH_STATE_PATH });
   } finally {

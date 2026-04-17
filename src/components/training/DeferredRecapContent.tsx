@@ -85,9 +85,7 @@ export function DeferredRecapContent({ trainingSessionId }: Props) {
           remarkPlugins={[remarkGfm]}
           components={{
             p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
-            ul: ({ children }) => (
-              <ul className="list-disc pl-4 space-y-1">{children}</ul>
-            ),
+            ul: ({ children }) => <ul className="list-disc pl-4 space-y-1">{children}</ul>,
             ol: ({ children }) => (
               <ol className="list-decimal pl-4 space-y-1">{children}</ol>
             ),
@@ -121,8 +119,7 @@ export function DeferredRecapContent({ trainingSessionId }: Props) {
           <div>
             <p className="text-sm font-medium">Resumen IA diferido</p>
             <p className="text-xs text-muted-foreground">
-              Detectamos conexión lenta. Puedes generar el resumen cuando
-              quieras.
+              Detectamos conexión lenta. Puedes generar el resumen cuando quieras.
             </p>
           </div>
         </div>

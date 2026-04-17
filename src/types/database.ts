@@ -1,712 +1,876 @@
+Connecting to db 5432
 export type Json =
   | string
   | number
   | boolean
   | null
   | { [key: string]: Json | undefined }
-  | Json[];
+  | Json[]
 
-export type GenericRelationship = {
-  foreignKeyName: string;
-  columns: string[];
-  isOneToOne?: boolean;
-  referencedRelation: string;
-  referencedColumns: string[];
-};
-
-export interface Database {
+export type Database = {
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
   public: {
     Tables: {
-      profiles: {
-        Row: {
-          id: string;
-          name: string | null;
-          email: string;
-          picture_url: string | null;
-          role: "admin" | "user";
-          created_at: string;
-        };
-        Insert: {
-          id: string;
-          name?: string | null;
-          email: string;
-          picture_url?: string | null;
-          role?: "admin" | "user";
-          created_at?: string;
-        };
-        Update: {
-          id?: string;
-          name?: string | null;
-          email?: string;
-          picture_url?: string | null;
-          role?: "admin" | "user";
-          created_at?: string;
-        };
-        Relationships: [];
-      };
-      bows: {
-        Row: {
-          id: string;
-          user_id: string;
-          hand: "left" | "right";
-          type: "recurve" | "compound" | "barebow";
-          draw_weight: number;
-          notes: string | null;
-          created_at: string;
-        };
-        Insert: {
-          id?: string;
-          user_id: string;
-          hand: "left" | "right";
-          type: "recurve" | "compound" | "barebow";
-          draw_weight: number;
-          notes?: string | null;
-          created_at?: string;
-        };
-        Update: {
-          id?: string;
-          user_id?: string;
-          hand?: "left" | "right";
-          type?: "recurve" | "compound" | "barebow";
-          draw_weight?: number;
-          notes?: string | null;
-          created_at?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "bows_user_id_fkey";
-            columns: ["user_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
-      scope_marks: {
-        Row: {
-          id: string;
-          bow_id: string;
-          distance: number;
-          mark_value: string;
-          notes: string | null;
-          created_at: string;
-        };
-        Insert: {
-          id?: string;
-          bow_id: string;
-          distance: number;
-          mark_value: string;
-          notes?: string | null;
-          created_at?: string;
-        };
-        Update: {
-          id?: string;
-          bow_id?: string;
-          distance?: number;
-          mark_value?: string;
-          notes?: string | null;
-          created_at?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "scope_marks_bow_id_fkey";
-            columns: ["bow_id"];
-            isOneToOne: false;
-            referencedRelation: "bows";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
       arrows: {
         Row: {
-          id: string;
-          user_id: string;
-          brand: string;
-          diameter_mm: number | null;
-          fletchings: string | null;
-          shaft_material: string | null;
-          point_type: string | null;
-          notes: string | null;
-          created_at: string;
-        };
+          brand: string
+          created_at: string
+          diameter_mm: number | null
+          fletchings: string | null
+          id: string
+          notes: string | null
+          point_type: string | null
+          shaft_material: string | null
+          user_id: string
+        }
         Insert: {
-          id?: string;
-          user_id: string;
-          brand: string;
-          diameter_mm?: number | null;
-          fletchings?: string | null;
-          shaft_material?: string | null;
-          point_type?: string | null;
-          notes?: string | null;
-          created_at?: string;
-        };
+          brand: string
+          created_at?: string
+          diameter_mm?: number | null
+          fletchings?: string | null
+          id?: string
+          notes?: string | null
+          point_type?: string | null
+          shaft_material?: string | null
+          user_id: string
+        }
         Update: {
-          id?: string;
-          user_id?: string;
-          brand?: string;
-          diameter_mm?: number | null;
-          fletchings?: string | null;
-          shaft_material?: string | null;
-          point_type?: string | null;
-          notes?: string | null;
-          created_at?: string;
-        };
+          brand?: string
+          created_at?: string
+          diameter_mm?: number | null
+          fletchings?: string | null
+          id?: string
+          notes?: string | null
+          point_type?: string | null
+          shaft_material?: string | null
+          user_id?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "arrows_user_id_fkey";
-            columns: ["user_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
+            foreignKeyName: "arrows_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
-        ];
-      };
-      locations: {
-        Row: {
-          id: string;
-          name: string;
-          active: boolean;
-          created_at: string;
-        };
-        Insert: {
-          id?: string;
-          name: string;
-          active?: boolean;
-          created_at?: string;
-        };
-        Update: {
-          id?: string;
-          name?: string;
-          active?: boolean;
-          created_at?: string;
-        };
-        Relationships: [];
-      };
+        ]
+      }
       bank_settings: {
         Row: {
-          id: string;
-          bank_name: string;
-          account_holder: string;
-          account_number: string;
-          account_type: string | null;
-          instructions: string | null;
-          updated_at: string;
-          updated_by: string | null;
-        };
+          account_holder: string
+          account_number: string
+          account_type: string | null
+          bank_name: string
+          id: string
+          instructions: string | null
+          updated_at: string
+          updated_by: string | null
+        }
         Insert: {
-          id?: string;
-          bank_name: string;
-          account_holder: string;
-          account_number: string;
-          account_type?: string | null;
-          instructions?: string | null;
-          updated_at?: string;
-          updated_by?: string | null;
-        };
+          account_holder: string
+          account_number: string
+          account_type?: string | null
+          bank_name: string
+          id?: string
+          instructions?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
         Update: {
-          id?: string;
-          bank_name?: string;
-          account_holder?: string;
-          account_number?: string;
-          account_type?: string | null;
-          instructions?: string | null;
-          updated_at?: string;
-          updated_by?: string | null;
-        };
+          account_holder?: string
+          account_number?: string
+          account_type?: string | null
+          bank_name?: string
+          id?: string
+          instructions?: string | null
+          updated_at?: string
+          updated_by?: string | null
+        }
         Relationships: [
           {
-            foreignKeyName: "bank_settings_updated_by_fkey";
-            columns: ["updated_by"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
+            foreignKeyName: "bank_settings_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
-        ];
-      };
-      scheduled_sessions: {
+        ]
+      }
+      bows: {
         Row: {
-          id: string;
-          user_id: string;
-          date: string;
-          time: string;
-          distance: number;
-          location_id: string;
-          status: "pending" | "confirmed" | "declined" | "cancelled";
-          material_bow: boolean;
-          material_arrows: boolean;
-          material_karkaj: boolean;
-          material_protection_gear: boolean;
-          material_weights: boolean;
-          material_tap: boolean;
-          notes: string | null;
-          admin_note: string | null;
-          created_at: string;
-        };
+          created_at: string
+          draw_weight: number
+          hand: Database["public"]["Enums"]["bow_hand"]
+          id: string
+          notes: string | null
+          type: Database["public"]["Enums"]["bow_type"]
+          user_id: string
+        }
         Insert: {
-          id?: string;
-          user_id: string;
-          date: string;
-          time: string;
-          distance: number;
-          location_id: string;
-          status?: "pending" | "confirmed" | "declined" | "cancelled";
-          material_bow?: boolean;
-          material_arrows?: boolean;
-          material_karkaj?: boolean;
-          material_protection_gear?: boolean;
-          material_weights?: boolean;
-          material_tap?: boolean;
-          notes?: string | null;
-          admin_note?: string | null;
-          created_at?: string;
-        };
+          created_at?: string
+          draw_weight: number
+          hand: Database["public"]["Enums"]["bow_hand"]
+          id?: string
+          notes?: string | null
+          type: Database["public"]["Enums"]["bow_type"]
+          user_id: string
+        }
         Update: {
-          id?: string;
-          user_id?: string;
-          date?: string;
-          time?: string;
-          distance?: number;
-          location_id?: string;
-          status?: "pending" | "confirmed" | "declined" | "cancelled";
-          material_bow?: boolean;
-          material_arrows?: boolean;
-          material_karkaj?: boolean;
-          material_protection_gear?: boolean;
-          material_weights?: boolean;
-          material_tap?: boolean;
-          notes?: string | null;
-          admin_note?: string | null;
-          created_at?: string;
-        };
+          created_at?: string
+          draw_weight?: number
+          hand?: Database["public"]["Enums"]["bow_hand"]
+          id?: string
+          notes?: string | null
+          type?: Database["public"]["Enums"]["bow_type"]
+          user_id?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "scheduled_sessions_user_id_fkey";
-            columns: ["user_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
+            foreignKeyName: "bows_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "scheduled_sessions_location_id_fkey";
-            columns: ["location_id"];
-            isOneToOne: false;
-            referencedRelation: "locations";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
-      payments: {
-        Row: {
-          id: string;
-          scheduled_session_id: string;
-          user_id: string;
-          receipt_url: string | null;
-          status: "pending" | "confirmed" | "rejected";
-          admin_note: string | null;
-          created_at: string;
-        };
-        Insert: {
-          id?: string;
-          scheduled_session_id: string;
-          user_id: string;
-          receipt_url?: string | null;
-          status?: "pending" | "confirmed" | "rejected";
-          admin_note?: string | null;
-          created_at?: string;
-        };
-        Update: {
-          id?: string;
-          scheduled_session_id?: string;
-          user_id?: string;
-          receipt_url?: string | null;
-          status?: "pending" | "confirmed" | "rejected";
-          admin_note?: string | null;
-          created_at?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "payments_scheduled_session_id_fkey";
-            columns: ["scheduled_session_id"];
-            isOneToOne: false;
-            referencedRelation: "scheduled_sessions";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "payments_user_id_fkey";
-            columns: ["user_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
-      training_sessions: {
-        Row: {
-          id: string;
-          scheduled_session_id: string | null;
-          user_id: string;
-          weather: "sunny" | "cloudy" | "rainy" | "heavy_rain" | "windy" | null;
-          type: "control" | "training" | "contest" | null;
-          distance: number | null;
-          start_time: string | null;
-          end_time: string | null;
-          target_size: string | null;
-          bow_id: string | null;
-          arrow_id: string | null;
-          new_gear_notes: string | null;
-          physical_status: string | null;
-          scoresheet_url: string | null;
-          final_thoughts: string | null;
-          ai_recap: string | null;
-          ai_advice: string | null;
-          created_at: string;
-          updated_at: string;
-        };
-        Insert: {
-          id?: string;
-          scheduled_session_id?: string | null;
-          user_id: string;
-          weather?:
-            | "sunny"
-            | "cloudy"
-            | "rainy"
-            | "heavy_rain"
-            | "windy"
-            | null;
-          type?: "control" | "training" | "contest" | null;
-          distance?: number | null;
-          start_time?: string | null;
-          end_time?: string | null;
-          target_size?: string | null;
-          bow_id?: string | null;
-          arrow_id?: string | null;
-          new_gear_notes?: string | null;
-          physical_status?: string | null;
-          scoresheet_url?: string | null;
-          final_thoughts?: string | null;
-          ai_recap?: string | null;
-          ai_advice?: string | null;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Update: {
-          id?: string;
-          scheduled_session_id?: string | null;
-          user_id?: string;
-          weather?:
-            | "sunny"
-            | "cloudy"
-            | "rainy"
-            | "heavy_rain"
-            | "windy"
-            | null;
-          type?: "control" | "training" | "contest" | null;
-          distance?: number | null;
-          start_time?: string | null;
-          end_time?: string | null;
-          target_size?: string | null;
-          bow_id?: string | null;
-          arrow_id?: string | null;
-          new_gear_notes?: string | null;
-          physical_status?: string | null;
-          scoresheet_url?: string | null;
-          final_thoughts?: string | null;
-          ai_recap?: string | null;
-          ai_advice?: string | null;
-          created_at?: string;
-          updated_at?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "training_sessions_user_id_fkey";
-            columns: ["user_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "training_sessions_scheduled_session_id_fkey";
-            columns: ["scheduled_session_id"];
-            isOneToOne: false;
-            referencedRelation: "scheduled_sessions";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "training_sessions_bow_id_fkey";
-            columns: ["bow_id"];
-            isOneToOne: false;
-            referencedRelation: "bows";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "training_sessions_arrow_id_fkey";
-            columns: ["arrow_id"];
-            isOneToOne: false;
-            referencedRelation: "arrows";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
-      rounds: {
-        Row: {
-          id: string;
-          training_session_id: string;
-          round_number: number;
-          created_at: string;
-        };
-        Insert: {
-          id?: string;
-          training_session_id: string;
-          round_number: number;
-          created_at?: string;
-        };
-        Update: {
-          id?: string;
-          training_session_id?: string;
-          round_number?: number;
-          created_at?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "rounds_training_session_id_fkey";
-            columns: ["training_session_id"];
-            isOneToOne: false;
-            referencedRelation: "training_sessions";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
-      round_scores: {
-        Row: {
-          id: string;
-          round_id: string;
-          method: "manual" | "summary" | "target_map";
-          data: Json;
-          total_score: number | null;
-          tens: number | null;
-          xs: number | null;
-          nines: number | null;
-          below_8_count: number | null;
-          misses: number | null;
-          created_at: string;
-        };
-        Insert: {
-          id?: string;
-          round_id: string;
-          method: "manual" | "summary" | "target_map";
-          data: Json;
-          total_score?: number | null;
-          tens?: number | null;
-          xs?: number | null;
-          nines?: number | null;
-          below_8_count?: number | null;
-          misses?: number | null;
-          created_at?: string;
-        };
-        Update: {
-          id?: string;
-          round_id?: string;
-          method?: "manual" | "summary" | "target_map";
-          data?: Json;
-          total_score?: number | null;
-          tens?: number | null;
-          xs?: number | null;
-          nines?: number | null;
-          below_8_count?: number | null;
-          misses?: number | null;
-          created_at?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "round_scores_round_id_fkey";
-            columns: ["round_id"];
-            isOneToOne: true;
-            referencedRelation: "rounds";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
+        ]
+      }
       improvement_areas: {
         Row: {
-          id: string;
-          training_session_id: string;
-          comment: string;
-          attachment_url: string | null;
-          created_at: string;
-        };
+          attachment_url: string | null
+          comment: string
+          created_at: string
+          id: string
+          training_session_id: string
+        }
         Insert: {
-          id?: string;
-          training_session_id: string;
-          comment: string;
-          attachment_url?: string | null;
-          created_at?: string;
-        };
+          attachment_url?: string | null
+          comment: string
+          created_at?: string
+          id?: string
+          training_session_id: string
+        }
         Update: {
-          id?: string;
-          training_session_id?: string;
-          comment?: string;
-          attachment_url?: string | null;
-          created_at?: string;
-        };
+          attachment_url?: string | null
+          comment?: string
+          created_at?: string
+          id?: string
+          training_session_id?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "improvement_areas_training_session_id_fkey";
-            columns: ["training_session_id"];
-            isOneToOne: false;
-            referencedRelation: "training_sessions";
-            referencedColumns: ["id"];
+            foreignKeyName: "improvement_areas_training_session_id_fkey"
+            columns: ["training_session_id"]
+            isOneToOne: false
+            referencedRelation: "training_sessions"
+            referencedColumns: ["id"]
           },
-        ];
-      };
-      warmup_plans: {
+        ]
+      }
+      locations: {
         Row: {
-          id: string;
-          title: string;
-          description: string;
-          created_by: string;
-          created_at: string;
-        };
+          active: boolean
+          created_at: string
+          id: string
+          name: string
+        }
         Insert: {
-          id?: string;
-          title: string;
-          description: string;
-          created_by: string;
-          created_at?: string;
-        };
+          active?: boolean
+          created_at?: string
+          id?: string
+          name: string
+        }
         Update: {
-          id?: string;
-          title?: string;
-          description?: string;
-          created_by?: string;
-          created_at?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "warmup_plans_created_by_fkey";
-            columns: ["created_by"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
-      stretching_plans: {
-        Row: {
-          id: string;
-          title: string;
-          description: string;
-          created_by: string;
-          created_at: string;
-        };
-        Insert: {
-          id?: string;
-          title: string;
-          description: string;
-          created_by: string;
-          created_at?: string;
-        };
-        Update: {
-          id?: string;
-          title?: string;
-          description?: string;
-          created_by?: string;
-          created_at?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "stretching_plans_created_by_fkey";
-            columns: ["created_by"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
-      notifications: {
-        Row: {
-          id: string;
-          user_id: string | null;
-          subject: string;
-          body: string;
-          sent_at: string | null;
-          created_at: string;
-        };
-        Insert: {
-          id?: string;
-          user_id?: string | null;
-          subject: string;
-          body: string;
-          sent_at?: string | null;
-          created_at?: string;
-        };
-        Update: {
-          id?: string;
-          user_id?: string | null;
-          subject?: string;
-          body?: string;
-          sent_at?: string | null;
-          created_at?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "notifications_user_id_fkey";
-            columns: ["user_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
+          active?: boolean
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: []
+      }
       marketplace_posts: {
         Row: {
-          id: string;
-          user_id: string;
-          title: string;
-          description: string;
-          price: number | null;
-          category: "bow" | "arrows" | "accessory" | "other";
-          images: Json;
-          status: "active" | "sold" | "removed";
-          created_at: string;
-          updated_at: string;
-        };
+          category: Database["public"]["Enums"]["marketplace_category"]
+          created_at: string
+          description: string
+          id: string
+          images: Json
+          price: number | null
+          status: Database["public"]["Enums"]["marketplace_status"]
+          title: string
+          updated_at: string
+          user_id: string
+        }
         Insert: {
-          id?: string;
-          user_id: string;
-          title: string;
-          description: string;
-          price?: number | null;
-          category: "bow" | "arrows" | "accessory" | "other";
-          images?: Json;
-          status?: "active" | "sold" | "removed";
-          created_at?: string;
-          updated_at?: string;
-        };
+          category: Database["public"]["Enums"]["marketplace_category"]
+          created_at?: string
+          description: string
+          id?: string
+          images?: Json
+          price?: number | null
+          status?: Database["public"]["Enums"]["marketplace_status"]
+          title: string
+          updated_at?: string
+          user_id: string
+        }
         Update: {
-          id?: string;
-          user_id?: string;
-          title?: string;
-          description?: string;
-          price?: number | null;
-          category?: "bow" | "arrows" | "accessory" | "other";
-          images?: Json;
-          status?: "active" | "sold" | "removed";
-          created_at?: string;
-          updated_at?: string;
-        };
+          category?: Database["public"]["Enums"]["marketplace_category"]
+          created_at?: string
+          description?: string
+          id?: string
+          images?: Json
+          price?: number | null
+          status?: Database["public"]["Enums"]["marketplace_status"]
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
         Relationships: [
           {
-            foreignKeyName: "marketplace_posts_user_id_fkey";
-            columns: ["user_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
-            referencedColumns: ["id"];
+            foreignKeyName: "marketplace_posts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
           },
-        ];
-      };
-    };
-    Views: { [_ in never]: never };
-    Functions: { [_ in never]: never };
-    Enums: { [_ in never]: never };
-  };
+        ]
+      }
+      notifications: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          sent_at: string | null
+          subject: string
+          user_id: string | null
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          sent_at?: string | null
+          subject: string
+          user_id?: string | null
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          sent_at?: string | null
+          subject?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payments: {
+        Row: {
+          admin_note: string | null
+          created_at: string
+          id: string
+          receipt_url: string | null
+          scheduled_session_id: string
+          status: Database["public"]["Enums"]["payment_status"]
+          user_id: string
+        }
+        Insert: {
+          admin_note?: string | null
+          created_at?: string
+          id?: string
+          receipt_url?: string | null
+          scheduled_session_id: string
+          status?: Database["public"]["Enums"]["payment_status"]
+          user_id: string
+        }
+        Update: {
+          admin_note?: string | null
+          created_at?: string
+          id?: string
+          receipt_url?: string | null
+          scheduled_session_id?: string
+          status?: Database["public"]["Enums"]["payment_status"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_scheduled_session_id_fkey"
+            columns: ["scheduled_session_id"]
+            isOneToOne: false
+            referencedRelation: "scheduled_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          name: string | null
+          picture_url: string | null
+          role: Database["public"]["Enums"]["user_role"]
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id: string
+          name?: string | null
+          picture_url?: string | null
+          role?: Database["public"]["Enums"]["user_role"]
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string | null
+          picture_url?: string | null
+          role?: Database["public"]["Enums"]["user_role"]
+        }
+        Relationships: []
+      }
+      round_scores: {
+        Row: {
+          below_8_count: number | null
+          created_at: string
+          data: Json
+          id: string
+          method: Database["public"]["Enums"]["score_method"]
+          misses: number | null
+          nines: number | null
+          round_id: string
+          tens: number | null
+          total_score: number | null
+          xs: number | null
+        }
+        Insert: {
+          below_8_count?: number | null
+          created_at?: string
+          data: Json
+          id?: string
+          method: Database["public"]["Enums"]["score_method"]
+          misses?: number | null
+          nines?: number | null
+          round_id: string
+          tens?: number | null
+          total_score?: number | null
+          xs?: number | null
+        }
+        Update: {
+          below_8_count?: number | null
+          created_at?: string
+          data?: Json
+          id?: string
+          method?: Database["public"]["Enums"]["score_method"]
+          misses?: number | null
+          nines?: number | null
+          round_id?: string
+          tens?: number | null
+          total_score?: number | null
+          xs?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "round_scores_round_id_fkey"
+            columns: ["round_id"]
+            isOneToOne: true
+            referencedRelation: "rounds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rounds: {
+        Row: {
+          created_at: string
+          id: string
+          round_number: number
+          training_session_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          round_number: number
+          training_session_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          round_number?: number
+          training_session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rounds_training_session_id_fkey"
+            columns: ["training_session_id"]
+            isOneToOne: false
+            referencedRelation: "training_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scheduled_sessions: {
+        Row: {
+          admin_note: string | null
+          created_at: string
+          date: string
+          distance: number
+          id: string
+          location_id: string
+          material_arrows: boolean
+          material_bow: boolean
+          material_karkaj: boolean
+          material_protection_gear: boolean
+          material_tap: boolean
+          material_weights: boolean
+          notes: string | null
+          status: Database["public"]["Enums"]["session_status"]
+          time: string
+          user_id: string
+        }
+        Insert: {
+          admin_note?: string | null
+          created_at?: string
+          date: string
+          distance: number
+          id?: string
+          location_id: string
+          material_arrows?: boolean
+          material_bow?: boolean
+          material_karkaj?: boolean
+          material_protection_gear?: boolean
+          material_tap?: boolean
+          material_weights?: boolean
+          notes?: string | null
+          status?: Database["public"]["Enums"]["session_status"]
+          time: string
+          user_id: string
+        }
+        Update: {
+          admin_note?: string | null
+          created_at?: string
+          date?: string
+          distance?: number
+          id?: string
+          location_id?: string
+          material_arrows?: boolean
+          material_bow?: boolean
+          material_karkaj?: boolean
+          material_protection_gear?: boolean
+          material_tap?: boolean
+          material_weights?: boolean
+          notes?: string | null
+          status?: Database["public"]["Enums"]["session_status"]
+          time?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scheduled_sessions_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scheduled_sessions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scope_marks: {
+        Row: {
+          bow_id: string
+          created_at: string
+          distance: number
+          id: string
+          mark_value: string
+          notes: string | null
+        }
+        Insert: {
+          bow_id: string
+          created_at?: string
+          distance: number
+          id?: string
+          mark_value: string
+          notes?: string | null
+        }
+        Update: {
+          bow_id?: string
+          created_at?: string
+          distance?: number
+          id?: string
+          mark_value?: string
+          notes?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scope_marks_bow_id_fkey"
+            columns: ["bow_id"]
+            isOneToOne: false
+            referencedRelation: "bows"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      stretching_plans: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string
+          id: string
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description: string
+          id?: string
+          title: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string
+          id?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stretching_plans_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      training_sessions: {
+        Row: {
+          ai_advice: string | null
+          ai_recap: string | null
+          arrow_id: string | null
+          bow_id: string | null
+          created_at: string
+          distance: number | null
+          end_time: string | null
+          final_thoughts: string | null
+          id: string
+          new_gear_notes: string | null
+          physical_status: string | null
+          scheduled_session_id: string | null
+          scoresheet_url: string | null
+          start_time: string | null
+          target_size: string | null
+          type: Database["public"]["Enums"]["training_type"] | null
+          updated_at: string
+          user_id: string
+          weather: Database["public"]["Enums"]["weather_type"] | null
+        }
+        Insert: {
+          ai_advice?: string | null
+          ai_recap?: string | null
+          arrow_id?: string | null
+          bow_id?: string | null
+          created_at?: string
+          distance?: number | null
+          end_time?: string | null
+          final_thoughts?: string | null
+          id?: string
+          new_gear_notes?: string | null
+          physical_status?: string | null
+          scheduled_session_id?: string | null
+          scoresheet_url?: string | null
+          start_time?: string | null
+          target_size?: string | null
+          type?: Database["public"]["Enums"]["training_type"] | null
+          updated_at?: string
+          user_id: string
+          weather?: Database["public"]["Enums"]["weather_type"] | null
+        }
+        Update: {
+          ai_advice?: string | null
+          ai_recap?: string | null
+          arrow_id?: string | null
+          bow_id?: string | null
+          created_at?: string
+          distance?: number | null
+          end_time?: string | null
+          final_thoughts?: string | null
+          id?: string
+          new_gear_notes?: string | null
+          physical_status?: string | null
+          scheduled_session_id?: string | null
+          scoresheet_url?: string | null
+          start_time?: string | null
+          target_size?: string | null
+          type?: Database["public"]["Enums"]["training_type"] | null
+          updated_at?: string
+          user_id?: string
+          weather?: Database["public"]["Enums"]["weather_type"] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "training_sessions_arrow_id_fkey"
+            columns: ["arrow_id"]
+            isOneToOne: false
+            referencedRelation: "arrows"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "training_sessions_bow_id_fkey"
+            columns: ["bow_id"]
+            isOneToOne: false
+            referencedRelation: "bows"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "training_sessions_scheduled_session_id_fkey"
+            columns: ["scheduled_session_id"]
+            isOneToOne: false
+            referencedRelation: "scheduled_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "training_sessions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      warmup_plans: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string
+          id: string
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description: string
+          id?: string
+          title: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string
+          id?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "warmup_plans_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      is_admin: { Args: never; Returns: boolean }
+    }
+    Enums: {
+      bow_hand: "left" | "right"
+      bow_type: "recurve" | "compound" | "barebow"
+      marketplace_category: "bow" | "arrows" | "accessory" | "other"
+      marketplace_status: "active" | "sold" | "removed"
+      payment_status: "pending" | "confirmed" | "rejected"
+      score_method: "manual" | "summary" | "target_map"
+      session_status: "pending" | "confirmed" | "declined" | "cancelled"
+      training_type: "control" | "training" | "contest"
+      user_role: "admin" | "user"
+      weather_type: "sunny" | "cloudy" | "rainy" | "heavy_rain" | "windy"
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
+  }
 }
+
+type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
+
+type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
+
+export type Tables<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+      Row: infer R
+    }
+    ? R
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])
+    ? (DefaultSchema["Tables"] &
+        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        Row: infer R
+      }
+      ? R
+      : never
+    : never
+
+export type TablesInsert<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Insert: infer I
+    }
+    ? I
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Insert: infer I
+      }
+      ? I
+      : never
+    : never
+
+export type TablesUpdate<
+  DefaultSchemaTableNameOrOptions extends
+    | keyof DefaultSchema["Tables"]
+    | { schema: keyof DatabaseWithoutInternals },
+  TableName extends DefaultSchemaTableNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    : never = never,
+> = DefaultSchemaTableNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+      Update: infer U
+    }
+    ? U
+    : never
+  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+        Update: infer U
+      }
+      ? U
+      : never
+    : never
+
+export type Enums<
+  DefaultSchemaEnumNameOrOptions extends
+    | keyof DefaultSchema["Enums"]
+    | { schema: keyof DatabaseWithoutInternals },
+  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    : never = never,
+> = DefaultSchemaEnumNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+    : never
+
+export type CompositeTypes<
+  PublicCompositeTypeNameOrOptions extends
+    | keyof DefaultSchema["CompositeTypes"]
+    | { schema: keyof DatabaseWithoutInternals },
+  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+    schema: keyof DatabaseWithoutInternals
+  }
+    ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
+    : never = never,
+> = PublicCompositeTypeNameOrOptions extends {
+  schema: keyof DatabaseWithoutInternals
+}
+  ? DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"][CompositeTypeName]
+  : PublicCompositeTypeNameOrOptions extends keyof DefaultSchema["CompositeTypes"]
+    ? DefaultSchema["CompositeTypes"][PublicCompositeTypeNameOrOptions]
+    : never
+
+export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
+  public: {
+    Enums: {
+      bow_hand: ["left", "right"],
+      bow_type: ["recurve", "compound", "barebow"],
+      marketplace_category: ["bow", "arrows", "accessory", "other"],
+      marketplace_status: ["active", "sold", "removed"],
+      payment_status: ["pending", "confirmed", "rejected"],
+      score_method: ["manual", "summary", "target_map"],
+      session_status: ["pending", "confirmed", "declined", "cancelled"],
+      training_type: ["control", "training", "contest"],
+      user_role: ["admin", "user"],
+      weather_type: ["sunny", "cloudy", "rainy", "heavy_rain", "windy"],
+    },
+  },
+} as const
+
+A new version of Supabase CLI is available: v2.90.0 (currently installed v2.84.2)
+We recommend updating regularly for new features and bug fixes: https://supabase.com/docs/guides/cli/getting-started#updating-the-supabase-cli

@@ -6,7 +6,7 @@ export function loginPage(page: Page) {
   return {
     title: page.getByText("Odiseo Archery"),
     email: page.getByLabel("Correo electrónico"),
-    password: page.getByLabel("Contraseña"),
+    password: page.locator('input[id="password"]'),
     confirmPassword: page.getByLabel("Confirmar contraseña"),
     description(mode: LoginMode) {
       return page.getByText(

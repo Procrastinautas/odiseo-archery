@@ -44,3 +44,4 @@ yarn-error.log*
 next-env.d.ts
 supabase/.temp/cli-latest
 supabase/.branches/_current_branch
+supabase/dumps/

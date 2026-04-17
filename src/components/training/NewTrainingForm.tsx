@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useState, useTransition } from "react";
+import { useState, useTransition, useRef, useEffect } from "react";
 import { createTrainingSession } from "@/actions/training";
 import type { TrainingStartRecapCard } from "@/actions/training";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -24,6 +24,12 @@ import { TrainingStartRecapCards } from "@/components/training/TrainingStartReca
 import { ChevronRight, ChevronLeft } from "lucide-react";
 import type { Database } from "@/types/database";
 import { toast } from "sonner";
+import { getTrainingSaveToastMessage } from "@/lib/training-save-feedback";
+import {
+  getCurrentDatetimeLocalValue,
+  parseDatetimeLocalValueToUtcIso,
+} from "@/lib/datetime";
+import { generateUUID } from "@/lib/uuid";
 
 type Bow = Database["public"]["Tables"]["bows"]["Row"];
 type Arrow = Database["public"]["Tables"]["arrows"]["Row"];
@@ -54,6 +60,13 @@ export function NewTrainingForm({ bows, arrows, recapCards }: Props) {
   const [step, setStep] = useState<1 | 2>(1);
   const [isPending, startTransition] = useTransition();
   const [serverError, setServerError] = useState<string | null>(null);
+  const sessionIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!sessionIdRef.current) {
+      sessionIdRef.current = generateUUID();
+    }
+  }, []);
 
   const {
     register,
@@ -64,7 +77,7 @@ export function NewTrainingForm({ bows, arrows, recapCards }: Props) {
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
-      start_time: new Date().toISOString().slice(0, 16),
+      start_time: getCurrentDatetimeLocalValue(),
     },
   });
 
@@ -82,10 +95,20 @@ export function NewTrainingForm({ bows, arrows, recapCards }: Props) {
     }
 
     startTransition(async () => {
-      const result = await createTrainingSession({ ...values, distance });
+      const result = await createTrainingSession({
+        id: sessionIdRef.current || undefined,
+        ...values,
+        distance,
+        start_time: parseDatetimeLocalValueToUtcIso(values.start_time),
+      });
       if (result.error) {
-        setServerError(result.error);
-        toast.error(result.error);
+        const message = getTrainingSaveToastMessage("la sesión", result.error);
+        setServerError(message);
+        toast.error(message);
+        console.error("Error al crear la sesión", {
+          sessionId: sessionIdRef.current,
+          error: result.error,
+        });
         return;
       }
 

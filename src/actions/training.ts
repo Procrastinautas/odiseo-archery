@@ -17,6 +17,10 @@ type TrainingUpdate =
 type RoundScoreMethod =
   Database["public"]["Tables"]["round_scores"]["Row"]["method"];
 
+function slog(action: string, data: Record<string, unknown>) {
+  console.log(JSON.stringify({ t: Date.now(), action, ...data }));
+}
+
 export interface TrainingStartRecapCard {
   id: string;
   created_at: string;
@@ -66,13 +70,33 @@ export async function createTrainingSession(
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
+  const sessionId = (data.id as string) || undefined;
+
   const { data: session, error } = await supabase
     .from("training_sessions")
-    .insert({ ...data, user_id: user.id })
+    .upsert(
+      { ...data, user_id: user.id, id: sessionId },
+      { onConflict: "id", ignoreDuplicates: true },
+    )
     .select("id")
     .single();
 
-  if (error) return { error: error.message };
+  if (error) {
+    slog("create_session", {
+      userId: user.id,
+      clientId: sessionId,
+      outcome: "error",
+      error: error.message,
+    });
+    return { error: error.message };
+  }
+
+  slog("create_session", {
+    userId: user.id,
+    clientId: sessionId,
+    outcome: "ok",
+  });
+
   revalidateTrainingPages(session.id);
   return { id: session.id };
 }
@@ -156,7 +180,24 @@ export async function upsertTrainingSession(id: string, data: TrainingUpdate) {
     .eq("id", id)
     .eq("user_id", user.id);
 
-  if (error) return { error: error.message };
+  if (error) {
+    slog("upsert_session", {
+      userId: user.id,
+      sessionId: id,
+      fields: Object.keys(data),
+      outcome: "error",
+      error: error.message,
+    });
+    return { error: error.message };
+  }
+
+  slog("upsert_session", {
+    userId: user.id,
+    sessionId: id,
+    fields: Object.keys(data),
+    outcome: "ok",
+  });
+
   revalidateTrainingPages(id);
   return { ok: true };
 }
@@ -205,7 +246,10 @@ export async function deleteTrainingSession(id: string) {
 
 // ─── Rounds ───────────────────────────────────────────────────────────────────
 
-export async function createRound(trainingSessionId: string) {
+export async function createRound(
+  trainingSessionId: string,
+  params: { clientId: string; roundNumber: number },
+) {
   const supabase = await createClient();
   const {
     data: { user },
@@ -220,28 +264,72 @@ export async function createRound(trainingSessionId: string) {
     .eq("user_id", user.id)
     .single();
 
-  if (!session) return { error: "Sesión no encontrada" };
-
-  // Determine next round number
-  const { data: existing } = await supabase
-    .from("rounds")
-    .select("round_number")
-    .eq("training_session_id", trainingSessionId)
-    .order("round_number", { ascending: false })
-    .limit(1);
-
-  const nextNumber = existing?.length ? existing[0].round_number + 1 : 1;
+  if (!session) {
+    slog("create_round", {
+      userId: user.id,
+      sessionId: trainingSessionId,
+      roundId: params.clientId,
+      outcome: "error",
+      error: "Sesión no encontrada",
+    });
+    return { error: "Sesión no encontrada" };
+  }
 
   const { data: round, error } = await supabase
     .from("rounds")
     .insert({
+      id: params.clientId,
       training_session_id: trainingSessionId,
-      round_number: nextNumber,
+      round_number: params.roundNumber,
     })
     .select("id")
     .single();
 
-  if (error) return { error: error.message };
+  if (error) {
+    // Check if it's a unique constraint violation (same round number already exists)
+    if (error.message.includes("unique") || error.message.includes("Uniqueness")) {
+      // Try to get the actual round for this round number
+      const { data: existing } = await supabase
+        .from("rounds")
+        .select("id")
+        .eq("training_session_id", trainingSessionId)
+        .eq("round_number", params.roundNumber)
+        .single();
+
+      if (existing) {
+        slog("create_round", {
+          userId: user.id,
+          sessionId: trainingSessionId,
+          roundId: params.clientId,
+          roundNumber: params.roundNumber,
+          outcome: "conflict",
+          existingRoundId: existing.id,
+        });
+        return {
+          error: "Ronda con este número ya existe. Verifica en la lista de rondas.",
+        };
+      }
+    }
+
+    slog("create_round", {
+      userId: user.id,
+      sessionId: trainingSessionId,
+      roundId: params.clientId,
+      roundNumber: params.roundNumber,
+      outcome: "error",
+      error: error.message,
+    });
+    return { error: error.message };
+  }
+
+  slog("create_round", {
+    userId: user.id,
+    sessionId: trainingSessionId,
+    roundId: params.clientId,
+    roundNumber: params.roundNumber,
+    outcome: "ok",
+  });
+
   revalidateTrainingPages(trainingSessionId, round.id);
   return { id: round.id };
 }
@@ -304,12 +392,26 @@ export async function upsertRoundScore(
     .eq("id", roundId)
     .single();
 
-  if (roundError || !round) return { error: "Ronda no encontrada" };
+  if (roundError || !round) {
+    slog("upsert_round_score", {
+      userId: user.id,
+      roundId,
+      outcome: "error",
+      error: "Ronda no encontrada",
+    });
+    return { error: "Ronda no encontrada" };
+  }
 
   const ownerId = ownerFromRelation(
     round.training_sessions as SessionOwnerRelation,
   );
   if (ownerId !== user.id) {
+    slog("upsert_round_score", {
+      userId: user.id,
+      roundId,
+      outcome: "error",
+      error: "No tiene permiso",
+    });
     return { error: "No tienes permiso para guardar esta ronda" };
   }
 
@@ -317,7 +419,24 @@ export async function upsertRoundScore(
     .from("round_scores")
     .upsert({ round_id: roundId, ...payload }, { onConflict: "round_id" });
 
-  if (error) return { error: error.message };
+  if (error) {
+    slog("upsert_round_score", {
+      userId: user.id,
+      roundId,
+      method: payload.method,
+      outcome: "error",
+      error: error.message,
+    });
+    return { error: error.message };
+  }
+
+  slog("upsert_round_score", {
+    userId: user.id,
+    roundId,
+    method: payload.method,
+    outcome: "ok",
+  });
+
   revalidateTrainingPages(round.training_session_id, roundId);
   return { ok: true };
 }
@@ -327,6 +446,7 @@ export async function upsertRoundScore(
 export async function createImprovementArea(
   trainingSessionId: string,
   comment: string,
+  clientId?: string,
 ) {
   const supabase = await createClient();
   const {
@@ -336,9 +456,33 @@ export async function createImprovementArea(
 
   const { error } = await supabase
     .from("improvement_areas")
-    .insert({ training_session_id: trainingSessionId, comment });
+    .upsert(
+      {
+        id: clientId,
+        training_session_id: trainingSessionId,
+        comment,
+      },
+      { onConflict: "id", ignoreDuplicates: true },
+    );
 
-  if (error) return { error: error.message };
+  if (error) {
+    slog("create_improvement_area", {
+      userId: user.id,
+      sessionId: trainingSessionId,
+      clientId,
+      outcome: "error",
+      error: error.message,
+    });
+    return { error: error.message };
+  }
+
+  slog("create_improvement_area", {
+    userId: user.id,
+    sessionId: trainingSessionId,
+    clientId,
+    outcome: "ok",
+  });
+
   revalidateTrainingPages(trainingSessionId);
   return { ok: true };
 }

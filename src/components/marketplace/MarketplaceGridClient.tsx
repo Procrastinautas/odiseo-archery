@@ -99,10 +99,7 @@ export function MarketplaceGridClient() {
           <p className="text-sm text-muted-foreground">
             No hay publicaciones activas
           </p>
-          <Link
-            href="/marketplace/new"
-            className={buttonVariants({ size: "sm" })}
-          >
+          <Link href="/marketplace/new" className={buttonVariants({ size: "sm" })}>
             <Plus className="mr-1.5 h-4 w-4" />
             Publicar equipos
           </Link>

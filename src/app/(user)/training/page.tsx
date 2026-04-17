@@ -19,6 +19,7 @@ import {
   Wind,
   type LucideIcon,
 } from "lucide-react";
+import { SessionDateLabel } from "@/components/training/SessionDateLabel";
 
 const TYPE_LABELS: Record<string, string> = {
   control: "Control",
@@ -62,15 +63,6 @@ type TrainingCardSession = Pick<
       }[]
     | null;
 };
-
-function formatDate(date: string) {
-  return new Date(date).toLocaleDateString("es-CO", {
-    weekday: "short",
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
-}
 
 function getWeatherIcon(weather: string) {
   if (weather === "sunny") return Sun;
@@ -389,9 +381,7 @@ export default async function TrainingPage() {
                     <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                       <div className="space-y-1.5 min-w-0">
                         <p className="font-semibold text-sm sm:text-base leading-none">
-                          {session.start_time
-                            ? formatDate(session.start_time)
-                            : "Sin fecha de inicio"}
+                          <SessionDateLabel date={session.start_time} />
                         </p>
 
                         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
