@@ -35,6 +35,7 @@ export async function enqueue(item: EnqueuePayload): Promise<void> {
     sessionId: item.sessionId,
     dependsOnOpId: item.dependsOnOpId || null,
   });
+  drainQueue().catch(console.error);
 }
 
 async function callServerAction(

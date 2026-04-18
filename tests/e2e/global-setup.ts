@@ -22,7 +22,7 @@ export default async function globalSetup(config: FullConfig) {
     auth: { autoRefreshToken: false, persistSession: false },
   });
 
-  const { error: createError } = await admin.auth.admin.createUser({
+  const { data: createdUser, error: createError } = await admin.auth.admin.createUser({
     email: TEST_USER_EMAIL,
     password: TEST_USER_PASSWORD,
     email_confirm: true,
@@ -30,6 +30,19 @@ export default async function globalSetup(config: FullConfig) {
 
   if (createError && !createError.message.toLowerCase().includes("already")) {
     throw createError;
+  }
+
+  // The handle_new_user trigger doesn't fire for Admin API creates, so we
+  // manually seed the profile. training_sessions has a FK → profiles.id.
+  const userId =
+    createdUser?.user?.id ??
+    (await admin.auth.admin.listUsers().then(({ data }) =>
+      data.users.find((u) => u.email === TEST_USER_EMAIL)?.id,
+    ));
+  if (userId) {
+    await admin
+      .from("profiles")
+      .upsert({ id: userId, email: TEST_USER_EMAIL }, { onConflict: "id", ignoreDuplicates: true });
   }
 
   // Capture real session cookies via headless browser login

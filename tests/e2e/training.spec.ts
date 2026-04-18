@@ -3,6 +3,7 @@ import {
   trainingListPage,
   newTrainingPage,
   sessionDetailPage,
+  selectRadixOption,
 } from "./pages/training-page";
 
 test.describe.serial("Training lifecycle", () => {
@@ -15,7 +16,7 @@ test.describe.serial("Training lifecycle", () => {
     await expect(page).toHaveURL("/training");
   });
 
-  test.skip("crea una sesión de entrenamiento nueva", async ({
+  test("crea una sesión de entrenamiento nueva", async ({
     authenticatedPage: page,
   }) => {
     await page.goto("/training/new");
@@ -29,15 +30,9 @@ test.describe.serial("Training lifecycle", () => {
     await expect(form.nextButton).toBeVisible({ timeout: 10000 });
 
     // Step 1: required fields
-    await form.typeCombobox.click();
-    const typeOption = page.getByRole("option", { name: "Entrenamiento" });
-    await typeOption.waitFor({ state: "visible", timeout: 5000 });
-    await typeOption.click();
-
-    // Use keyboard to select weather (Select might have issues with click)
-    await form.weatherCombobox.click();
-    await page.keyboard.press("ArrowDown");
-    await page.keyboard.press("Enter");
+    // Radix Select portal requires waiting for [role="listbox"] before clicking options
+    await selectRadixOption(page, form.typeCombobox, "Entrenamiento");
+    await selectRadixOption(page, form.weatherCombobox, "Soleado");
 
     await form.distanceInput.fill("18");
     await form.nextButton.click();
@@ -52,7 +47,7 @@ test.describe.serial("Training lifecycle", () => {
     });
   });
 
-  test.skip("la página de detalle muestra las pestañas de sesión", async ({
+  test("la página de detalle muestra las pestañas de sesión", async ({
     authenticatedPage: page,
   }) => {
     // Navigate to list and click into first session (created by previous test)

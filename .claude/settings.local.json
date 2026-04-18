@@ -1,0 +1,7 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(PGPASSWORD=postgres psql postgresql://postgres:postgres@127.0.0.1:55432/postgres -c 'ALTER TABLE public.rounds ADD CONSTRAINT \"rounds_session_round_unique\" UNIQUE \\(\"training_session_id\", \"round_number\"\\);')"
+    ]
+  }
+}

@@ -268,7 +268,9 @@ CREATE TABLE public.rounds (
   round_number        integer     NOT NULL,
   created_at          timestamptz NOT NULL DEFAULT now(),
   CONSTRAINT rounds_training_session_id_fkey
-    FOREIGN KEY (training_session_id) REFERENCES public.training_sessions(id) ON DELETE CASCADE
+    FOREIGN KEY (training_session_id) REFERENCES public.training_sessions(id) ON DELETE CASCADE,
+  CONSTRAINT rounds_session_round_unique
+    UNIQUE (training_session_id, round_number)
 );
 
 
